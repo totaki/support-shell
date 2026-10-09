@@ -38,3 +38,7 @@ OpenCode Go receives a stable `x-opencode-session` header; `agent reset` rotates
 ## Prompt maintenance
 
 The complete model instruction lives at `internal/agent/system_prompt.md` and is embedded in the binary via `//go:embed`. Changes require recompiling the Go binary. It tells the agent to use previous named resources as investigative context while refreshing live observations, to avoid broad claims when only a subset was checked, to report missing previous logs honestly, and to use clean Russian. This remains instruction-level guidance, not deterministic enforcement.
+
+## Проверка полноты утверждений
+
+Инструкция в `internal/agent/system_prompt.md` требует подтверждать каждое поле сводной таблицы фактическими данными для соответствующего объекта. Результат `k8s.nodes` может содержать условия для всех нод; выборочные `k8s.node.describe` не означают проверки остальных нод. Неизвестные значения нельзя заполнять предположениями. Отчёт о здоровье не должен уходить в overcommit и SPOF без запроса или наблюдаемой причины. Также модель должна оформлять маркированные списки с пробелом после дефиса; это рекомендация модели, а не детерминированная коррекция текста.
