@@ -33,3 +33,9 @@ k8s top pods <namespace>
 `report` displays the latest agent report; `report save` writes Markdown into the user's configuration directory. Saved reports and history can include sensitive operational details.
 
 Current limitations: simple whitespace argument parsing, no streaming `logs --follow`, and resource completions require permission to list Kubernetes objects.
+
+## Формат вывода и границы команд
+
+По умолчанию используется `set format table`: ресурсные списки Kubernetes и `plugins list` представлены таблицами, `plugins info <name>` — читаемым подробным описанием. Для машинной обработки используйте `set format json`: результаты Registry-команд печатаются как JSON; обычный текст превращается в JSON-строку. Ответ агента в этом режиме выводится объектом `{"answer":"..."}` — это текст ответа, не структурированный JSON-диагноз. Вернуться к обычному выводу: `set format table`.
+
+После ввода добавляется пустая строка перед результатом, а следующее приглашение начинается с дополнительного отступа по вертикали. Так блок результата визуально отделяется от пользовательской команды и следующего ввода. Настройка формата действует в пределах текущего процесса Shell и не записывается в конфигурационный файл.
