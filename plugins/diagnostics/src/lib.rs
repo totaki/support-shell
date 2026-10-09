@@ -1,5 +1,5 @@
 use extism_pdk::*;
-use support_plugin_sdk::{Command, Manifest, Request, host_request};
+use support_plugin_sdk::{Command, Manifest, Request, Example, host_request};
 use serde_json::{json, Value};
 
 #[host_fn]
@@ -13,10 +13,16 @@ fn call(id: &str, input: Value) -> FnResult<Value> {
 
 #[plugin_fn]
 pub fn describe(_: String) -> FnResult<String> {
-    Ok(serde_json::to_string(&Manifest::new("diagnostics", "0.1.0",
+    Ok(serde_json::to_string(&{ let mut manifest = Manifest::new("diagnostics", "0.1.0",
         &["k8s.pods", "k8s.events"],
         vec![Command::read("diagnostics.k8s.inspect", "diagnose k8s",
-            "Inspect Kubernetes pods and events", &["namespace"])]))?)
+            "Inspect Kubernetes pods and events", &["namespace"])]);
+        manifest.title = "Kubernetes Workload Diagnostics".into();
+        manifest.description = "Read-only namespace triage of pods and warning events".into();
+        manifest.author = "Support Shell".into();
+        manifest.commands[0].input_schema = Some(json!({"type":"object","properties":{"namespace":{"type":"string","description":"Kubernetes namespace"}},"required":["namespace"],"additionalProperties":false}));
+        manifest.commands[0].examples = vec![Example{command:"diagnose k8s kube-system".into(),description:"Triage system workloads".into()}];
+        manifest })?)
 }
 
 #[plugin_fn]
