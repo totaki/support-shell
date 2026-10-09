@@ -90,3 +90,11 @@ network health
 ## Документация каждого плагина
 
 Каждый плагин хранит собственный `README.md` рядом с `Cargo.toml`, с назначением, командами, примерами, запрашиваемыми capabilities и ограничениями. Текущие примеры: [Diagnostics](../plugins/diagnostics/README.md) и [Network](../plugins/network/README.md). Описание плагина не заменяет контракт `describe()`: команды и capabilities определяются манифестом WASM.
+
+## Self-describing plugin manifests
+
+Optional, backwards-compatible manifest fields now include `title`, `description`, `author` on the plugin, and `inputSchema`, `outputSchema`, `examples` on each command. Existing manifests with `apiVersion: support.shell/v1alpha1` remain accepted; the wire API version has **not** changed. Rust SDK exposes the corresponding optional metadata on `Manifest` and `Command`.
+
+The same metadata feeds `plugins list` (short purpose), `plugins info NAME` (detail), `help <command path>` (arguments, examples and schemas), and the built-in AI tool definitions. Prefer JSON Schema object definitions with `properties` and `required`; use `additionalProperties: false` for tight tool interfaces. The Go Host currently validates basic schema shape in the manifest, not full input/output values at execution time. MCP exposure is a **planned adapter**, not implemented by this change.
+
+Try `plugins list`, `plugins info network`, `help network health`, or `help diagnose k8s` after rebuilding the Rust plugins. Per-plugin README files remain the place for extended how-to and safety notes.
