@@ -9,6 +9,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
+	"errors"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -149,7 +151,11 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		ans, err := s.Agent.Ask(ctx, line)
 		if toolCount > 0 { fmt.Println(traceFooter(colorsEnabled())) }
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "agent:", err)
+            if errors.Is(err, context.Canceled) || ctx.Err() != nil {
+                fmt.Println("  Cancelled (Ctrl+C)")
+            } else {
+                fmt.Fprintln(os.Stderr, "agent:", err)
+            }
 		} else {
 			fmt.Println(indentOutput(s.renderAgentAnswer(ans)))
 		}
@@ -157,6 +163,39 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		fmt.Println("Unknown command (no agent configured). Type help.")
 	}
 	return true
+}
+
+ 
+// handleInterruptible enables terminal-generated SIGINT only while a command
+// is executing. During line editing we deliberately keep ISIG disabled so
+// Ctrl+C remains an editor key rather than killing the process.
+func (s *Shell) handleInterruptible(parent context.Context, line string, raw bool) bool {
+    ctx, cancel := context.WithCancel(parent)
+    defer cancel()
+    signals := make(chan os.Signal, 1)
+    signal.Notify(signals, os.Interrupt)
+    defer signal.Stop(signals)
+    done := make(chan struct{})
+    defer close(done)
+    go func() {
+        select {
+        case <-signals:
+            cancel()
+        case <-done:
+        }
+    }()
+    if raw {
+        cmd := exec.Command("stty", "isig")
+        cmd.Stdin = os.Stdin
+        if err := cmd.Run(); err == nil {
+            defer func() {
+                restore := exec.Command("stty", "-isig")
+                restore.Stdin = os.Stdin
+                _ = restore.Run()
+            }()
+        }
+    }
+    return s.Handle(ctx, line)
 }
 
 const (
@@ -209,7 +248,7 @@ func (s *Shell) Run(ctx context.Context) {
 		if !sc.Scan() {
 			break
 		}
-		if !s.Handle(ctx, sc.Text()) {
+		if !s.handleInterruptible(ctx, sc.Text(), false) {
 			break
 		}
 		if s.PendingContext != "" {
@@ -333,7 +372,7 @@ func (s *Shell) raw(ctx context.Context) bool {
 			return true
 		case 13, 10:
 			fmt.Print("\r\n")
-			if !s.Handle(ctx, string(ed.line)) {
+			if !s.handleInterruptible(ctx, string(ed.line), true) {
 				return true
 			}
 			if s.PendingContext != "" {
