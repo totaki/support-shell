@@ -39,3 +39,17 @@ make run-plugin
 ```
 
 `make plugin` currently builds only the diagnostics example. To add another Rust plugin, place its source under `plugins/<name>`, export `describe/execute/complete`, and compile for `wasm32-wasip1`. Its release WASM is picked up on the next launch. The `extism` Go build tag is necessary.
+
+## Plugin Manager
+
+The built-in read-only CLI commands `plugins list` and `plugins info <name>` work with or without the Extism build tag. They expose the current in-process inventory of **successfully loaded** plugins: name, version, API version, WASM path, status (`loaded`), commands, and declared capabilities. With ordinary `make run` they return an empty list, because external WASM loading requires `-tags extism`.
+
+```bash
+make plugin
+make run-plugin
+# In the shell:
+plugins list
+plugins info diagnostics
+```
+
+This is not a persistent package manager: it does not yet support install/uninstall, plugin health checks, failed-plugin history, signatures, or hot reload. Startup still fails on invalid WASM plugins or duplicate registrations; the inventory is only populated after successful registration.
