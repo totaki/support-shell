@@ -197,3 +197,7 @@ Run `plugins list` or `plugins info diagnostics` to inspect loaded WASM modules,
 Output defaults to a readable view (`plugins list` uses a table, `plugins info NAME` uses detail fields). Use `set format json` for JSON-formatted command results, and `set format table` to switch back. In JSON mode AI answers are wrapped as `{"answer":"..."}`. Command output is visually separated from the next prompt. See [docs/shell.md](docs/shell.md).
 
 Plugin manifests now support optional title, description, author, JSON input/output schemas and examples. CLI discovery (`plugins list`, `plugins info network`, `help network health`) and AI tools share these fields. Older `support.shell/v1alpha1` plugins remain supported; an MCP adapter has not yet been implemented. Details: [docs/plugins.md](docs/plugins.md).
+
+### Stdio MCP server
+
+The same Registry now backs CLI, embedded AI and a read-only MCP server. Build with `go build -tags extism -o support ./cmd/support`; configure your MCP client to launch `support mcp serve` with an absolute `PLUGIN_PATH`. WASM plugin tools appear in `tools/list` automatically. See [docs/mcp.md](docs/mcp.md) for setup, safety and limitations.
