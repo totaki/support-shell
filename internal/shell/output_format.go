@@ -31,7 +31,7 @@ func (s *Shell) renderResult(id string, value any) string {
      }
     }
     if len(rows)==0{return "No plugins loaded"}
-    return tabulate([]string{"NAME","VERSION","STATUS","COMMANDS","CAPABILITIES"},rows)
+    return tabulate([]string{"NAME","VERSION","STATUS","DESCRIPTION","COMMANDS","CAPABILITIES"},rows)
    }
   }
  case "network.k8s.health":
@@ -42,6 +42,9 @@ func (s *Shell) renderResult(id string, value any) string {
    header:=[]string{
     "Name: "+displayValue(decoded["name"]),
     "Version: "+displayValue(decoded["version"]),
+    "Title: "+displayValue(decoded["title"]),
+    "Description: "+displayValue(decoded["description"]),
+    "Author: "+displayValue(decoded["author"]),
     "API: "+displayValue(decoded["apiVersion"]),
     "Status: "+displayValue(decoded["status"]),
     "Path: "+displayValue(decoded["path"]),
@@ -68,7 +71,7 @@ func pluginRow(p map[string]any) []string {
  caps:=[]string{}
  if c,ok:=p["capabilities"].([]any);ok{for _,v:=range c{caps=append(caps,displayValue(v))}}
  sort.Strings(caps)
- return []string{displayValue(p["name"]),displayValue(p["version"]),displayValue(p["status"]),count,strings.Join(caps,", ")}
+ return []string{displayValue(p["name"]),displayValue(p["version"]),displayValue(p["status"]),displayValue(p["description"]),count,strings.Join(caps,", ")}
 }
 func displayValue(v any) string {if v==nil{return "-"};return fmt.Sprint(v)}
 func tabulate(headings []string, rows [][]string) string {
