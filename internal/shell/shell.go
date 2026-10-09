@@ -129,10 +129,13 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		if contextAware, ok := s.Agent.(interface{ SetContext(string) }); ok {
 			contextAware.SetContext(s.CurrentContext)
 		}
+		toolCount := 0
 		if traced, ok := s.Agent.(interface {
 			SetTrace(func(string, map[string]any, time.Duration, error))
 		}); ok {
 			traced.SetTrace(func(id string, input map[string]any, d time.Duration, err error) {
+				if toolCount == 0 { fmt.Println(traceHeader(colorsEnabled())) }
+				toolCount++
 				status := "✓"
 				if err != nil {
 					status = "✗"
@@ -144,6 +147,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 			})
 		}
 		ans, err := s.Agent.Ask(ctx, line)
+		if toolCount > 0 { fmt.Println(traceFooter(colorsEnabled())) }
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "agent:", err)
 		} else {
