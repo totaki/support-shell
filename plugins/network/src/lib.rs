@@ -1,7 +1,7 @@
 mod analysis;
 use extism_pdk::*;
 use serde_json::{json, Value};
-use support_plugin_sdk::{Command, Manifest, Request, host_request};
+use support_plugin_sdk::{Command, Manifest, Request, Example, host_request};
 
 #[host_fn]
 extern "ExtismHost" { fn host_call(request: String) -> String; }
@@ -13,13 +13,21 @@ fn read_tool(id: &str, input: Value) -> FnResult<Value> {
 
 #[plugin_fn]
 pub fn describe(_: String) -> FnResult<String> {
-    Ok(serde_json::to_string(&Manifest::new(
+    Ok(serde_json::to_string(&{ let mut manifest = Manifest::new(
         "network", "0.1.0", &["k8s.nodes"],
         vec![Command::read("network.k8s.nodes", "network nodes",
             "Summarize Kubernetes node addresses and readiness via read-only Host API", &[]),
              Command::read("network.k8s.health", "network health",
             "Diagnose node readiness and pressure conditions with structured findings", &[])]
-    ))?)
+    );
+    manifest.title = "Kubernetes Network Diagnostics".into();
+    manifest.description = "Node readiness and pressure findings derived from Kubernetes NodeStatus".into();
+    manifest.author = "Support Shell".into();
+    for command in &mut manifest.commands {
+        command.input_schema = Some(json!({"type":"object","properties":{},"additionalProperties":false}));
+        command.examples = vec![Example{command:command.path.clone(),description:"Inspect current cluster nodes".into()}];
+    }
+    manifest })?)
 }
 
 #[plugin_fn]
