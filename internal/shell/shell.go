@@ -26,6 +26,7 @@ type Shell struct {
 	HistoryPath    string
 	PendingContext string
 	CurrentContext string
+	OutputFormat string // "table" (default) or "json"
 }
 
 func (s *Shell) Handle(ctx context.Context, line string) bool {
@@ -35,11 +36,18 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	}
 	s.History = append(s.History, line)
 	s.SaveHistory()
+	if strings.HasPrefix(line, "set format ") {
+		mode := strings.TrimSpace(strings.TrimPrefix(line, "set format "))
+		if mode != "table" && mode != "json" { fmt.Println("Usage: set format table|json"); return true }
+		s.OutputFormat = mode
+		fmt.Println("Output format:", mode)
+		return true
+	}
 	switch line {
 	case "quit", "exit":
 		return false
 	case "help":
-		fmt.Println("Built-in: help, commands, history, report, report save, agent reset, exit")
+		fmt.Println("Built-in: help, commands, history, set format table|json, report, report save, agent reset, exit")
 		for _, c := range s.Registry.List() {
 			fmt.Printf("  %-24s %s\n", c.Path, c.Description)
 		}
@@ -98,7 +106,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 				return true
 			}
 			// Validation of existence happens only on confirmed execution.
-			fmt.Println(formatResult(current))
+			fmt.Println(s.renderResult("k8s.contexts", current))
 			fmt.Printf("\nSwitch Kubernetes context:\n  Current: %s\n  Target:  %s\n", currentContextName(current), target)
 			s.PendingContext = target
 			return true
@@ -109,7 +117,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 			var result any
 			result, err = s.Registry.Execute(ctx, c.ID, input)
 			if err == nil {
-				fmt.Println(renderCommand(c.ID, result))
+				fmt.Println(s.renderResult(c.ID, result))
 				return true
 			}
 		}
@@ -193,7 +201,7 @@ func (s *Shell) Run(ctx context.Context) {
 	}
 	sc := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Print(s.prompt(false))
+		fmt.Print("\n", s.prompt(false))
 		if !sc.Scan() {
 			break
 		}
@@ -320,7 +328,7 @@ func (s *Shell) raw(ctx context.Context) bool {
 			fmt.Print("\r\n")
 			return true
 		case 13, 10:
-			fmt.Print("\r\n")
+			fmt.Print("\r\n\r\n")
 			if !s.Handle(ctx, string(ed.line)) {
 				return true
 			}
@@ -336,6 +344,7 @@ func (s *Shell) raw(ctx context.Context) bool {
 				s.applyContextDecision(ctx, decision)
 			}
 			ed = newEditor(s.History)
+			fmt.Print("\r\n")
 			redraw()
 		case 127, 8:
 			ed.backspace()
@@ -569,7 +578,7 @@ func (s *Shell) applyContextDecision(ctx context.Context, decision string) {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return
 	}
-	fmt.Println(formatResult(result))
+	fmt.Println(s.renderResult("k8s.context.use", result))
 	s.refreshContext(ctx)
 }
 
