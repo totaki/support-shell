@@ -102,3 +102,7 @@ Try `plugins list`, `plugins info network`, `help network health`, or `help diag
 ## MCP exposure
 
 With `support mcp serve`, loaded plugin commands marked `read` are automatically exposed to external MCP clients as tools. The tool name is the Registry command ID, and its description and input schema come from the same manifest used for CLI help and the embedded agent. MCP is an adapter, not a requirement on the WASM plugins themselves. See [docs/mcp.md](mcp.md).
+
+## Plugin Runtime v1: проверка аргументов
+
+Вызовы через CLI, встроенный AI и MCP проходят через один Registry. Он проверяет уникальность идентификаторов команд при регистрации и валидирует входные данные до запуска обработчика, когда задан `inputSchema`. Поддерживается подмножество JSON Schema: корневой `type: object`, `required`, `properties` с простыми типами (string, boolean, integer, number, object, array), `enum` и `additionalProperties: false`. Это **не полная реализация JSON Schema**: вложенные ограничения, `oneOf`, `pattern`, форматы и ограничения диапазонов пока не проверяются. Не следует считать эту валидацию защитой от произвольных возможностей стороннего WASM-кода; действуют отдельные Host capability checks.
