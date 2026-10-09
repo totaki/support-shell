@@ -55,5 +55,11 @@ func (m Manifest) Validate() error {
         if ids[c.ID] || paths[c.Path] { return fmt.Errorf("duplicate command id or path: %s", c.ID) }
         ids[c.ID], paths[c.Path] = true, true
     }
+    capabilities := map[string]bool{}
+    for _, capability := range m.Capabilities {
+        if strings.TrimSpace(capability) == "" { return errors.New("empty capability") }
+        if capabilities[capability] { return fmt.Errorf("duplicate capability %q", capability) }
+        capabilities[capability] = true
+    }
     return nil
 }
