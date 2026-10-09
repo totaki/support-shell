@@ -5,6 +5,7 @@ import (
 	"example.com/support-shell/internal/agent"
 	"example.com/support-shell/internal/core"
 	"example.com/support-shell/internal/modules"
+	"example.com/support-shell/internal/mcp"
 	"example.com/support-shell/internal/pluginmanager"
 	"example.com/support-shell/internal/shell"
 	"flag"
@@ -23,6 +24,17 @@ func main() {
 	if err := loadPlugins(r, manager); err != nil {
 		fmt.Fprintln(os.Stderr, "plugin:", err)
 		os.Exit(1)
+	}
+	if len(flag.Args()) == 2 && flag.Arg(0) == "mcp" && flag.Arg(1) == "serve" {
+		if err := (&mcp.Server{Registry:r}).Serve(context.Background(),os.Stdin,os.Stdout);err!=nil {
+			fmt.Fprintln(os.Stderr,"mcp:",err)
+			os.Exit(1)
+		}
+		return
+	}
+	if len(flag.Args()) > 0 {
+		fmt.Fprintln(os.Stderr,"usage: support [--command text] | support mcp serve")
+		os.Exit(2)
 	}
 	s := &shell.Shell{Registry: r, Agent: agent.New(r)}
 	s.LoadHistory()
