@@ -72,3 +72,17 @@ make run-plugin
 ```
 
 CI запускает Rust SDK tests и отдельно компилирует оба WASM. Полноценное end-to-end тестирование исполнения через Extism по-прежнему требует runtime-проверки.
+
+## Диагностические findings
+
+Плагин `network` теперь предоставляет `network health`, который вызывает `k8s.nodes` один раз и самостоятельно проверяет NodeStatus. Ответ содержит `coverage` (total/ready/not_ready/unknown_ready), `findings_count`, массив `findings`, `source` и `note`. Каждая finding содержит `node`, `severity`, `code`, `message`, `source` и `condition`.
+
+Правила: `Ready=False` → `critical`, отсутствие/неизвестность Ready → `warning`, Pressure=True → `warning`, отсутствие сведений о Pressure → `info`. `Ready=True` и все Pressure=False дают ноль findings. Это моментальный снимок, а не RCA и не историческая проверка; имена `CalicoIsUp` не выводятся, если они не анализировались.
+
+```text
+network health
+set format json
+network health
+```
+
+Результат пригоден для агентов и автоматизации; исходное `network nodes` сохранено. Unit-тесты анализа находятся в `plugins/network/src/analysis.rs`.
