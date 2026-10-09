@@ -105,3 +105,5 @@ make run-plugin
 Support Shell теперь умеет работать как локальный MCP-сервер поверх того же Registry, что используют CLI и встроенный агент. Команда `support mcp serve` публикует read-only инструменты, включая команды загруженных WASM-плагинов, через `tools/list` и `tools/call`. Соберите `go build -tags extism -o support ./cmd/support`, затем настройте MCP-клиент на запуск `/path/to/support mcp serve` с `PLUGIN_PATH=/absolute/path/to/plugins`. Инструкции и пример конфигурации: [docs/mcp.md](docs/mcp.md).
 
 Подсказки Tab работают также для встроенных команд: `help <команда>`, `set format table|json`, `plugins info <имя>`, `report save`, `agent reset` и Registry-команд. Динамическое дополнение аргументов зависит от наличия `Completer` у конкретной команды.
+
+Plugin Runtime теперь проверяет уникальность ID команд в Registry и базовые JSON Schema аргументов перед выполнением — одинаково для CLI, AI и MCP. Поддерживаемые ограничения описаны в [docs/plugins.md](docs/plugins.md); полная JSON Schema пока не реализована.
