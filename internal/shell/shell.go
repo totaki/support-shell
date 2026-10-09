@@ -65,7 +65,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		return true
 	case "report":
 		if rep, ok := s.Agent.(interface{ Report() string }); ok && rep.Report() != "" {
-			fmt.Println(s.renderAgentAnswer(rep.Report()))
+			fmt.Println(indentOutput(s.renderAgentAnswer(rep.Report())))
 		} else {
 			fmt.Println("No agent report yet")
 		}
@@ -106,7 +106,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 				return true
 			}
 			// Validation of existence happens only on confirmed execution.
-			fmt.Println(s.renderResult("k8s.contexts", current))
+			fmt.Println(indentOutput(s.renderResult("k8s.contexts", current)))
 			fmt.Printf("\nSwitch Kubernetes context:\n  Current: %s\n  Target:  %s\n", currentContextName(current), target)
 			s.PendingContext = target
 			return true
@@ -117,7 +117,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 			var result any
 			result, err = s.Registry.Execute(ctx, c.ID, input)
 			if err == nil {
-				fmt.Println(s.renderResult(c.ID, result))
+				fmt.Println(indentOutput(s.renderResult(c.ID, result)))
 				return true
 			}
 		}
@@ -137,9 +137,9 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 				if err != nil {
 					status = "✗"
 				}
-				fmt.Printf("  %s %s %s (%d ms)\n", status, id, compactInput(input), d.Milliseconds())
+				fmt.Printf("    %s %s %s (%d ms)\n", status, id, compactInput(input), d.Milliseconds())
 				if err != nil {
-					fmt.Printf("    error: %v\n", err)
+					fmt.Printf("      error: %v\n", err)
 				}
 			})
 		}
@@ -147,7 +147,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "agent:", err)
 		} else {
-			fmt.Println(s.renderAgentAnswer(ans))
+			fmt.Println(indentOutput(s.renderAgentAnswer(ans)))
 		}
 	} else {
 		fmt.Println("Unknown command (no agent configured). Type help.")
@@ -201,7 +201,7 @@ func (s *Shell) Run(ctx context.Context) {
 	}
 	sc := bufio.NewScanner(os.Stdin)
 	for {
-		fmt.Print("\n", s.prompt(false))
+		fmt.Print(s.prompt(false))
 		if !sc.Scan() {
 			break
 		}
@@ -328,7 +328,7 @@ func (s *Shell) raw(ctx context.Context) bool {
 			fmt.Print("\r\n")
 			return true
 		case 13, 10:
-			fmt.Print("\r\n\r\n")
+			fmt.Print("\r\n")
 			if !s.Handle(ctx, string(ed.line)) {
 				return true
 			}
@@ -344,7 +344,6 @@ func (s *Shell) raw(ctx context.Context) bool {
 				s.applyContextDecision(ctx, decision)
 			}
 			ed = newEditor(s.History)
-			fmt.Print("\r\n")
 			redraw()
 		case 127, 8:
 			ed.backspace()
@@ -578,7 +577,7 @@ func (s *Shell) applyContextDecision(ctx context.Context, decision string) {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return
 	}
-	fmt.Println(s.renderResult("k8s.context.use", result))
+	fmt.Println(indentOutput(s.renderResult("k8s.context.use", result)))
 	s.refreshContext(ctx)
 }
 
