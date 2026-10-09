@@ -149,7 +149,9 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 			})
 		}
 		ans, err := s.Agent.Ask(ctx, line)
-		if toolCount > 0 { fmt.Println(traceFooter(colorsEnabled())) }
+		if toolCount > 0 {
+            if ctx.Err() != nil { fmt.Println("  └──────────────") } else { fmt.Println(traceFooter(colorsEnabled())) }
+        }
 		if err != nil {
             if errors.Is(err, context.Canceled) || ctx.Err() != nil {
                 fmt.Println("  Cancelled (Ctrl+C)")
