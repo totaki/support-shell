@@ -195,3 +195,5 @@ To upgrade an existing checkout, use `update.sh` with the ZIP. Go SDK for Extism
 Run `plugins list` or `plugins info diagnostics` to inspect loaded WASM modules, versions, paths, exposed commands and capabilities. Loading still requires `-tags extism`; without Extism these commands return an empty inventory. See [docs/plugins.md](docs/plugins.md).
 
 Output defaults to a readable view (`plugins list` uses a table, `plugins info NAME` uses detail fields). Use `set format json` for JSON-formatted command results, and `set format table` to switch back. In JSON mode AI answers are wrapped as `{"answer":"..."}`. Command output is visually separated from the next prompt. See [docs/shell.md](docs/shell.md).
+
+Plugin manifests now support optional title, description, author, JSON input/output schemas and examples. CLI discovery (`plugins list`, `plugins info network`, `help network health`) and AI tools share these fields. Older `support.shell/v1alpha1` plugins remain supported; an MCP adapter has not yet been implemented. Details: [docs/plugins.md](docs/plugins.md).
