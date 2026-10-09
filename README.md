@@ -1,5 +1,9 @@
 # Support Shell — runnable reference implementation
 
+> **Documentation:** [Русский README](README.ru.md) · [Architecture](docs/architecture.md) · [Shell commands](docs/shell.md) · [Agent behavior](docs/agent.md) · [WASM plugins](docs/plugins.md)
+>
+> This README contains historical PoC notes. The documents above describe current architecture and behavior. The agent's adaptive answer depth is prompt guidance, not a deterministic workflow.
+
 Interactive Go shell with a shared command registry, persisted history, ANSI colors, tab completion, built-in modules, an OpenAI-compatible tool-calling agent, and an experimental Extism/WASM bridge.
 
 ## Run
