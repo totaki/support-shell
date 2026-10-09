@@ -13,26 +13,52 @@ import (
 	"strings"
 	"path/filepath"
 	"sync"
+	"sort"
 	"time"
 )
 
 
 func loadPlugins(r *core.Registry) error {
-    paths := strings.TrimSpace(os.Getenv("SUPPORT_PLUGINS"))
-    if paths == "" {
-        paths = strings.TrimSpace(os.Getenv("SUPPORT_PLUGIN"))
+    // PLUGIN_PATH is a directory, a WASM file, or a comma-separated list.
+    source := strings.TrimSpace(os.Getenv("PLUGIN_PATH"))
+    if source == "" {
+        source = strings.TrimSpace(os.Getenv("SUPPORT_PLUGINS"))
     }
-    if paths == "" { return nil }
-    seenPaths := make(map[string]bool)
-    seenNames := make(map[string]bool)
-    for _, item := range strings.Split(paths, ",") {
-        path := strings.TrimSpace(item)
-        if path == "" { return fmt.Errorf("empty WASM plugin path in SUPPORT_PLUGINS") }
-        abs, err := filepath.Abs(path)
-        if err != nil { return err }
-        if seenPaths[abs] { return fmt.Errorf("duplicate WASM plugin path: %s", path) }
-        seenPaths[abs] = true
-        if err := loadSinglePlugin(r, abs, seenNames); err != nil {
+    if source == "" {
+        source = strings.TrimSpace(os.Getenv("SUPPORT_PLUGIN"))
+    }
+    if source == "" { source = "./plugins" }
+
+    seenPaths, seenNames := map[string]bool{}, map[string]bool{}
+    var files []string
+    for _, item := range strings.Split(source, ",") {
+        item = strings.TrimSpace(item)
+        if item == "" { return fmt.Errorf("empty plugin path") }
+        info, err := os.Stat(item)
+        if os.IsNotExist(err) && source == "./plugins" { continue } // no plugins installed yet
+        if err != nil { return fmt.Errorf("plugin path %s: %w", item, err) }
+        candidates := []string{item}
+        if info.IsDir() {
+            candidates = nil
+            for _, pattern := range []string{"*.wasm", "*/target/wasm32-wasip1/release/*.wasm"} {
+                hits, err := filepath.Glob(filepath.Join(item, pattern))
+                if err != nil { return err }
+                candidates = append(candidates, hits...)
+            }
+        } else if filepath.Ext(item) != ".wasm" {
+            return fmt.Errorf("plugin must be .wasm: %s", item)
+        }
+        for _, candidate := range candidates {
+            abs, err := filepath.Abs(candidate)
+            if err != nil { return err }
+            if seenPaths[abs] { return fmt.Errorf("duplicate WASM plugin: %s", candidate) }
+            seenPaths[abs] = true
+            files = append(files, abs)
+        }
+    }
+    sort.Strings(files)
+    for _, path := range files {
+        if err := loadSinglePlugin(r, path, seenNames); err != nil {
             return fmt.Errorf("load WASM plugin %s: %w", path, err)
         }
     }
