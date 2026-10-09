@@ -94,6 +94,7 @@ func (r *Registry) execute(ctx context.Context, id string, in map[string]any, ap
 			if c.Risk != "read" && !approved {
 				return nil, fmt.Errorf("mutating command %s requires explicit approval (not implemented)", id)
 			}
+			if err := validateInput(c.InputSchema, in); err != nil { return nil, fmt.Errorf("invalid input for %s: %w", id, err) }
 			return c.Handler(ctx, in)
 		}
 	}
