@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"example.com/support-shell/internal/core"
 	"example.com/support-shell/pkg/pluginapi"
+	"example.com/support-shell/internal/pluginmanager"
 	"fmt"
 	extism "github.com/extism/go-sdk"
 	"os"
@@ -18,7 +19,7 @@ import (
 )
 
 
-func loadPlugins(r *core.Registry) error {
+func loadPlugins(r *core.Registry, manager *pluginmanager.Manager) error {
     // PLUGIN_PATH is a directory, a WASM file, or a comma-separated list.
     source := strings.TrimSpace(os.Getenv("PLUGIN_PATH"))
     if source == "" {
@@ -58,14 +59,14 @@ func loadPlugins(r *core.Registry) error {
     }
     sort.Strings(files)
     for _, path := range files {
-        if err := loadSinglePlugin(r, path, seenNames); err != nil {
+        if err := loadSinglePlugin(r, manager, path, seenNames); err != nil {
             return fmt.Errorf("load WASM plugin %s: %w", path, err)
         }
     }
     return nil
 }
 
-func loadSinglePlugin(r *core.Registry, path string, seenNames map[string]bool) error {
+func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path string, seenNames map[string]bool) error {
 	// Each plugin has an independent, manifest-scoped capability set.
 	// The host function is restricted to read-only built-in commands.
 	var granted map[string]bool
@@ -145,7 +146,7 @@ func loadSinglePlugin(r *core.Registry, path string, seenNames map[string]bool) 
 			return err
 		}
 	}
-	return nil
+	return manager.Add(path, d)
 }
 
 // Only explicit, read-only commands may be invoked from WASM.
