@@ -57,3 +57,7 @@ Current limitations: simple whitespace argument parsing, no streaming `logs --fo
 ## Command discovery
 
 `help <command>` now renders metadata from the central Registry (e.g. `help network health`): description, declared risk, argument names, example invocations and JSON input/output schemas where supplied by the WASM plugin. `plugins list` shows the short description supplied by each loaded plugin; `plugins info NAME` includes its title and description.
+
+## Автодополнение Tab
+
+Теперь Tab использует единый набор встроенных команд Shell и команд Registry. Поддерживаются `help <command>` (по всем зарегистрированным путям, включая WASM), `set format table|json`, `plugins info <name>`, а также `report`, `report save`, `agent reset` и Kubernetes-команды. Если команда предоставляет собственный `Completer`, он применяется к её аргументам (например, имена Kubernetes-контекстов и плагинов). Для произвольных аргументов, которые не имеют отдельного источника вариантов, динамических подсказок пока нет — это не ошибка Tab. Подсказки работают в интерактивном терминальном режиме; при запуске через stdin pipe используется упрощённый ввод.
