@@ -121,7 +121,7 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 		granted[capability] = true
 	}
 	for _, entry := range d.Commands {
-		c := core.Command{ID: entry.ID, Path: entry.Path, Description: entry.Description, Risk: string(entry.Risk), Args: entry.Args}
+		c := core.Command{ID: entry.ID, Path: entry.Path, Description: entry.Description, Risk: string(entry.Risk), Args: entry.Args, InputSchema: entry.InputSchema, OutputSchema: entry.OutputSchema, Examples: func() []string { var out []string; for _, e := range entry.Examples { out = append(out,e.Command) }; return out }()}
 		commandID := c.ID
 		c.Handler = func(ctx context.Context, input map[string]any) (any, error) {
 			payload, _ := json.Marshal(pluginapi.Request{Command: commandID, Input: input})
