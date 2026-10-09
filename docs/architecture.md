@@ -29,3 +29,7 @@ The system remains a PoC: no independent RBAC or complete audit trail, mutation 
 ## Validation
 
 GitHub Actions (`.github/workflows/ci.yml`) runs Go tests/race/vet/build and Rust WASM compilation. This is not an end-to-end Kubernetes test.
+
+## MCP adapter
+
+An optional stdio MCP server (`internal/mcp`) publishes the same read-only Registry commands through JSON-RPC `tools/list` and `tools/call`; it does not execute standalone plugin implementations or bypass Registry risk checks. WASM plugins remain implementation modules with their own Extism Host capabilities. See [mcp.md](mcp.md).
