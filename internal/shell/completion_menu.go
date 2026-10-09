@@ -60,7 +60,8 @@ func selectCompletion(reader *bufio.Reader, out io.Writer, choices []string, col
 			}
 			fmt.Fprint(out, "\r\n")
 		}
-		fmt.Fprint(out, "\r\x1b[2K  ↑↓ select · Tab next · Enter accept · Esc cancel")
+		// The footer is static: do not erase/reprint it on each arrow key.
+		fmt.Fprint(out, "\r")
 	}
 	cleanup := func() {
 		visible := menuHeight
