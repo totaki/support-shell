@@ -65,7 +65,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		return true
 	case "report":
 		if rep, ok := s.Agent.(interface{ Report() string }); ok && rep.Report() != "" {
-			fmt.Println(renderAgentMarkdown(rep.Report()))
+			fmt.Println(s.renderAgentAnswer(rep.Report()))
 		} else {
 			fmt.Println("No agent report yet")
 		}
@@ -147,7 +147,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "agent:", err)
 		} else {
-			fmt.Println(renderAgentMarkdown(ans))
+			fmt.Println(s.renderAgentAnswer(ans))
 		}
 	} else {
 		fmt.Println("Unknown command (no agent configured). Type help.")
@@ -634,4 +634,11 @@ func saveReport(report, contextName string) (string, error) {
 		return "", err
 	}
 	return path, nil
+}
+
+// renderAgentAnswer retains the model response as text in table mode and
+// wraps it as a JSON string field when structured output is requested.
+func (s *Shell) renderAgentAnswer(answer string) string {
+ if s.OutputFormat == "json" { return core.JSON(map[string]any{"answer":answer}) }
+ return renderAgentMarkdown(answer)
 }
