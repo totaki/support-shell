@@ -189,7 +189,10 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 				properties[flag] = map[string]any{"type": "string", "description": "Optional kubectl logs flag; previous/timestamps accept true or false"}
 			}
 		}
-		name := toolAlias(c.ID)
+		if c.InputSchema != nil {
+            properties = nil
+        }
+        name := toolAlias(c.ID)
 		if original, exists := toolIDs[name]; exists && original != c.ID {
 			for n := 2; ; n++ {
 				candidate := fmt.Sprintf("%s_%d", name, n)
@@ -200,7 +203,11 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 			}
 		}
 		toolIDs[name] = c.ID
-		tools = append(tools, map[string]any{"type": "function", "function": map[string]any{"name": name, "description": c.Description, "parameters": map[string]any{"type": "object", "properties": properties, "required": required, "additionalProperties": false}}})
+        schema := map[string]any{"type":"object","properties":properties,"required":required,"additionalProperties":false}
+        if c.InputSchema != nil { schema = c.InputSchema }
+        description := c.Description
+        if len(c.Examples)>0 { description += "\nExample: "+strings.Join(c.Examples, "; ") }
+        tools = append(tools, map[string]any{"type":"function","function":map[string]any{"name":name,"description":description,"parameters":schema}})
 	}
 	callsUsed := 0
 	rounds := a.MaxRounds
