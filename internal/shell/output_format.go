@@ -2,6 +2,7 @@ package shell
 
 import (
  "bytes"
+ "encoding/json"
  "fmt"
  "sort"
  "strings"
@@ -75,4 +76,10 @@ func tabulate(headings []string, rows [][]string) string {
  for _,row:=range rows{fmt.Fprintln(w,strings.Join(row,"\t"))}
  _=w.Flush()
  return strings.TrimSpace(buf.String())
+}
+
+func decodeJSON(value any, target any) error {
+ data,err:=json.Marshal(value)
+ if err!=nil{return err}
+ return json.Unmarshal(data,target)
 }
