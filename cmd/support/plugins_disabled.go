@@ -2,6 +2,9 @@
 
 package main
 
-import "example.com/support-shell/internal/core"
+import (
+ "example.com/support-shell/internal/core"
+ "example.com/support-shell/internal/pluginmanager"
+)
 
-func loadPlugins(r *core.Registry) error { return nil }
+func loadPlugins(r *core.Registry, _ *pluginmanager.Manager) error { return nil }
