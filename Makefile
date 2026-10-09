@@ -15,7 +15,8 @@ deps:
 	go mod tidy
 
 plugin:
-	cd plugins/diagnostics && cargo build --target wasm32-wasip1 --release
+	cargo build --manifest-path plugins/diagnostics/Cargo.toml --target wasm32-wasip1 --release
+	cargo build --manifest-path plugins/network/Cargo.toml --target wasm32-wasip1 --release
 
 run-plugin:
 	PLUGIN_PATH="$(PLUGIN_PATH)" go run -tags extism ./cmd/support
