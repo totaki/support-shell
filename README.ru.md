@@ -85,3 +85,7 @@ make run-plugin
 Установка, удаление, горячая перезагрузка и проверка подписей пока не реализованы. Подробнее: [docs/plugins.md](docs/plugins.md).
 
 Общий Rust SDK находится в `plugins/sdk`. Примеры `diagnostics` и `network` используют его без изменений Go Core. Собрать оба: `make plugin`, запустить: `make run-plugin`, проверить: `plugins list` и `network nodes`. Подробности: `docs/plugins.md`.
+
+### Вывод команд
+
+`plugins list` теперь отображается таблицей, а `plugins info diagnostics` — читаемыми полями и списком команд. Переключить общий режим вывода: `set format json`; обратно: `set format table` (по умолчанию). В JSON-режиме ответ AI выводится объектом с полем `answer`, а не разбирается на структурированные факты. Терминал дополнительно отделяет команды и результаты пустыми строками. См. [docs/shell.md](docs/shell.md).
