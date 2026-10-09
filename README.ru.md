@@ -99,3 +99,7 @@ make run-plugin
 ### Единая документация инструментов
 
 Плагины могут описывать себя в `describe()`: `title`, `description`, `author`, схемы `inputSchema` / `outputSchema` и примеры `examples`. Теперь это видно через `plugins list`, `plugins info network` и `help network health`; встроенный агент получает схему и примеры из того же Registry. Старые плагины совместимы. MCP-адаптер поверх Registry — следующий этап, пока он не реализован.
+
+### MCP Server (stdio)
+
+Support Shell теперь умеет работать как локальный MCP-сервер поверх того же Registry, что используют CLI и встроенный агент. Команда `support mcp serve` публикует read-only инструменты, включая команды загруженных WASM-плагинов, через `tools/list` и `tools/call`. Соберите `go build -tags extism -o support ./cmd/support`, затем настройте MCP-клиент на запуск `/path/to/support mcp serve` с `PLUGIN_PATH=/absolute/path/to/plugins`. Инструкции и пример конфигурации: [docs/mcp.md](docs/mcp.md).
