@@ -38,7 +38,7 @@ func selectCompletion(reader *bufio.Reader, out io.Writer, choices []string, col
 			}
 			fmt.Fprint(out, "\x1b[K\r\n")
 		}
-		fmt.Fprint(out, "  ↑↓ select · Tab next · Enter accept · Esc cancel\x1b[K")
+		fmt.Fprint(out, "\r\x1b[2K  ↑↓ select · Tab next · Enter accept · Esc cancel")
 	}
 	// Repaint only menu rows, leaving the current input intact.
 	repaint := func() {
