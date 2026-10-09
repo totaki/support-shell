@@ -34,6 +34,8 @@ func (s *Shell) renderResult(id string, value any) string {
     return tabulate([]string{"NAME","VERSION","STATUS","COMMANDS","CAPABILITIES"},rows)
    }
   }
+ case "network.k8s.health":
+  return renderNetworkHealth(value)
  case "plugins.info":
   decoded:=map[string]any{}
   if err:=decodeJSON(value,&decoded);err==nil {
@@ -82,4 +84,20 @@ func decodeJSON(value any, target any) error {
  data,err:=json.Marshal(value)
  if err!=nil{return err}
  return json.Unmarshal(data,target)
+}
+
+func renderNetworkHealth(value any) string {
+ v:=map[string]any{}
+ if err:=decodeJSON(value,&v);err!=nil{return formatResult(value)}
+ if _,ok:=v["error"];ok{return formatResult(value)}
+ cover,_:=v["coverage"].(map[string]any)
+ intro:=fmt.Sprintf("Nodes: %v  Ready: %v  NotReady: %v  Unknown: %v",cover["total"],cover["ready"],cover["not_ready"],cover["unknown_ready"])
+ rows:=[][]string{}
+ if items,ok:=v["findings"].([]any);ok {
+  for _,item:=range items {if f,ok:=item.(map[string]any);ok{
+   rows=append(rows,[]string{displayValue(f["severity"]),displayValue(f["node"]),displayValue(f["code"]),displayValue(f["message"])})
+  }}
+ }
+ if len(rows)==0{return intro+"\nNo findings"}
+ return intro+"\n"+tabulate([]string{"SEVERITY","NODE","CODE","MESSAGE"},rows)
 }
