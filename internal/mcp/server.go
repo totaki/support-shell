@@ -40,7 +40,8 @@ func (s *Server) listTools() []map[string]any {
   if schema==nil {
    properties:=map[string]any{}
    for _,arg:=range c.Args {properties[arg]=map[string]any{"type":"string"}}
-   schema=map[string]any{"type":"object","properties":properties,"required":c.Args,"additionalProperties":false}
+   required:=append([]string{},c.Args...)
+   schema=map[string]any{"type":"object","properties":properties,"required":required,"additionalProperties":false}
   }
   entry:=map[string]any{"name":c.ID,"title":c.Path,"description":c.Description,"inputSchema":schema,"annotations":map[string]any{"readOnlyHint":true}}
   if c.OutputSchema!=nil {entry["outputSchema"]=c.OutputSchema}
