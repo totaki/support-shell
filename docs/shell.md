@@ -53,3 +53,7 @@ Current limitations: simple whitespace argument parsing, no streaming `logs --fo
 Во время исполнения команды, включая запросы AI и read-only tools, `Ctrl+C` отменяет текущий контекст выполнения и возвращает управление интерактивному Shell. Незавершённый диалоговый ход AI не сохраняется в его истории. В режиме ввода `Ctrl+C` по-прежнему завершает REPL (поведение редактора). В меню completion подсказка `↑↓ select...` фиксирована; при перемещении меняются только строки вариантов. При отмене не выводится пустой заголовок `Answer`.
 
 `network health` отображается таблицей findings по умолчанию. Для исходного JSON используйте `set format json`.
+
+## Command discovery
+
+`help <command>` now renders metadata from the central Registry (e.g. `help network health`): description, declared risk, argument names, example invocations and JSON input/output schemas where supplied by the WASM plugin. `plugins list` shows the short description supplied by each loaded plugin; `plugins info NAME` includes its title and description.
