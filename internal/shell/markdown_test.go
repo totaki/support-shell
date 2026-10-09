@@ -27,3 +27,20 @@ func TestMarkdownRendering(t *testing.T) {
 		t.Fatal("terminal escape injection")
 	}
 }
+
+func TestMarkdownListsAndLiteralHyphens(t *testing.T) {
+    cases := []struct{ input, want string }{
+        {"- kubelet heartbeat is fresh", "• kubelet heartbeat is fresh"},
+        {"  - node Ready", "  • node Ready"},
+        {"1. first item", "1. first item"},
+        {"-heartbeat", "-heartbeat"},
+        {"kubectl logs --previous=true", "kubectl logs --previous=true"},
+    }
+    for _, tc := range cases {
+        t.Run(tc.input, func(t *testing.T) {
+            if got := renderMarkdown(tc.input, false); got != tc.want {
+                t.Fatalf("renderMarkdown(%q) = %q, want %q", tc.input, got, tc.want)
+            }
+        })
+    }
+}
