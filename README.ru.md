@@ -83,3 +83,5 @@ make run-plugin
 `plugins list` показывает загруженные плагины, версии, пути и capabilities; `plugins info diagnostics` — подробности одного модуля, в том числе команды. Данные берутся из загрузчика в текущем процессе, а не из сканирования диска после запуска. Без `-tags extism` список пустой.
 
 Установка, удаление, горячая перезагрузка и проверка подписей пока не реализованы. Подробнее: [docs/plugins.md](docs/plugins.md).
+
+Общий Rust SDK находится в `plugins/sdk`. Примеры `diagnostics` и `network` используют его без изменений Go Core. Собрать оба: `make plugin`, запустить: `make run-plugin`, проверить: `plugins list` и `network nodes`. Подробности: `docs/plugins.md`.
