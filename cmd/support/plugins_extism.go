@@ -10,18 +10,40 @@ import (
 	"fmt"
 	extism "github.com/extism/go-sdk"
 	"os"
+	"strings"
+	"path/filepath"
+	"sync"
 	"time"
 )
 
 
 func loadPlugins(r *core.Registry) error {
-	path := os.Getenv("SUPPORT_PLUGIN")
-	if path == "" {
-		return nil
-	}
-	// The extension is intentionally granted only one capability.
+    paths := strings.TrimSpace(os.Getenv("SUPPORT_PLUGINS"))
+    if paths == "" {
+        paths = strings.TrimSpace(os.Getenv("SUPPORT_PLUGIN"))
+    }
+    if paths == "" { return nil }
+    seenPaths := make(map[string]bool)
+    seenNames := make(map[string]bool)
+    for _, item := range strings.Split(paths, ",") {
+        path := strings.TrimSpace(item)
+        if path == "" { return fmt.Errorf("empty WASM plugin path in SUPPORT_PLUGINS") }
+        abs, err := filepath.Abs(path)
+        if err != nil { return err }
+        if seenPaths[abs] { return fmt.Errorf("duplicate WASM plugin path: %s", path) }
+        seenPaths[abs] = true
+        if err := loadSinglePlugin(r, abs, seenNames); err != nil {
+            return fmt.Errorf("load WASM plugin %s: %w", path, err)
+        }
+    }
+    return nil
+}
+
+func loadSinglePlugin(r *core.Registry, path string, seenNames map[string]bool) error {
+	// Each plugin has an independent, manifest-scoped capability set.
 	// The host function is restricted to read-only built-in commands.
 	var granted map[string]bool
+	var callMu sync.Mutex
 	host := extism.NewHostFunctionWithStack("host_call", func(ctx context.Context, p *extism.CurrentPlugin, stack []uint64) {
 		raw, err := p.ReadBytes(stack[0])
 		if err != nil {
@@ -60,8 +82,10 @@ func loadPlugins(r *core.Registry) error {
 		return fmt.Errorf("decode plugin manifest: %w", err)
 	}
 	if err = d.Validate(); err != nil {
-		return fmt.Errorf("invalid plugin manifest: %w", err)
-	}
+        return fmt.Errorf("invalid plugin manifest: %w", err)
+    }
+    if seenNames[d.Name] { return fmt.Errorf("duplicate plugin name %q", d.Name) }
+    seenNames[d.Name] = true
 	granted = make(map[string]bool, len(d.Capabilities))
 	for _, capability := range d.Capabilities {
 		if !allowedPluginCall(capability) {
@@ -76,6 +100,8 @@ func loadPlugins(r *core.Registry) error {
 			payload, _ := json.Marshal(pluginapi.Request{Command: commandID, Input: input})
 			callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
+			callMu.Lock()
+			defer callMu.Unlock()
 			exit, resp, err := plugin.CallWithContext(callCtx, "execute", payload)
 			if err != nil {
 				return nil, err
