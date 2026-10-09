@@ -5,6 +5,7 @@ import (
 	"example.com/support-shell/internal/agent"
 	"example.com/support-shell/internal/core"
 	"example.com/support-shell/internal/modules"
+	"example.com/support-shell/internal/pluginmanager"
 	"example.com/support-shell/internal/shell"
 	"flag"
 	"fmt"
@@ -17,7 +18,9 @@ func main() {
 	r := core.NewRegistry()
 	modules.RegisterDemo(r)
 	modules.RegisterKubernetes(r)
-	if err := loadPlugins(r); err != nil {
+	manager := pluginmanager.New()
+	if err := manager.Register(r); err != nil { fmt.Fprintln(os.Stderr, "plugin manager:", err); os.Exit(1) }
+	if err := loadPlugins(r, manager); err != nil {
 		fmt.Fprintln(os.Stderr, "plugin:", err)
 		os.Exit(1)
 	}
