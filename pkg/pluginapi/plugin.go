@@ -22,6 +22,9 @@ type Manifest struct {
     APIVersion string `json:"apiVersion"`
     Name string `json:"name"`
     Version string `json:"version"`
+    Title string `json:"title,omitempty"`
+    Description string `json:"description,omitempty"`
+    Author string `json:"author,omitempty"`
     Commands []Command `json:"commands"`
     Capabilities []string `json:"capabilities,omitempty"`
 }
@@ -32,6 +35,14 @@ type Command struct {
     Description string `json:"description"`
     Risk Risk `json:"risk"`
     Args []string `json:"args,omitempty"`
+    InputSchema map[string]any `json:"inputSchema,omitempty"`
+    OutputSchema map[string]any `json:"outputSchema,omitempty"`
+    Examples []Example `json:"examples,omitempty"`
+}
+
+type Example struct {
+    Command string `json:"command"`
+    Description string `json:"description,omitempty"`
 }
 
 type Request struct {
@@ -51,6 +62,9 @@ func (m Manifest) Validate() error {
     ids, paths := map[string]bool{}, map[string]bool{}
     for _, c := range m.Commands {
         if c.ID == "" || c.Path == "" { return errors.New("command id and path are required") }
+        if c.InputSchema != nil && c.InputSchema["type"] != "object" { return fmt.Errorf("inputSchema for %s must have type object", c.ID) }
+        if c.OutputSchema != nil && c.OutputSchema["type"] == nil { return fmt.Errorf("outputSchema for %s must declare type", c.ID) }
+        for _, ex := range c.Examples { if strings.TrimSpace(ex.Command)=="" {return fmt.Errorf("empty example for %s",c.ID)} }
         if c.Risk != RiskRead && c.Risk != RiskWrite && c.Risk != RiskDangerous { return fmt.Errorf("invalid risk %q for %s", c.Risk, c.ID) }
         if ids[c.ID] || paths[c.Path] { return fmt.Errorf("duplicate command id or path: %s", c.ID) }
         ids[c.ID], paths[c.Path] = true, true
