@@ -12,6 +12,9 @@ import (
 type Plugin struct {
  Name string `json:"name"`
  Version string `json:"version"`
+ Title string `json:"title,omitempty"`
+ Description string `json:"description,omitempty"`
+ Author string `json:"author,omitempty"`
  APIVersion string `json:"apiVersion"`
  Path string `json:"path"`
  Status string `json:"status"`
@@ -24,7 +27,7 @@ func (m *Manager) Add(path string, manifest pluginapi.Manifest) error {
  if err:=manifest.Validate();err!=nil{return err}
  m.mu.Lock(); defer m.mu.Unlock()
  if _, exists:=m.items[manifest.Name];exists{return fmt.Errorf("duplicate plugin %q",manifest.Name)}
- m.items[manifest.Name]=Plugin{Name:manifest.Name,Version:manifest.Version,APIVersion:manifest.APIVersion,Path:path,Status:"loaded",Capabilities:append([]string(nil),manifest.Capabilities...),Commands:append([]pluginapi.Command(nil),manifest.Commands...)}
+ m.items[manifest.Name]=Plugin{Name:manifest.Name,Version:manifest.Version,Title:manifest.Title,Description:manifest.Description,Author:manifest.Author,APIVersion:manifest.APIVersion,Path:path,Status:"loaded",Capabilities:append([]string(nil),manifest.Capabilities...),Commands:append([]pluginapi.Command(nil),manifest.Commands...)}
  return nil
 }
 func (m *Manager) List() []Plugin {
