@@ -148,6 +148,14 @@ func (a *Model) Reset() {
 	a.mu.Unlock()
 }
 func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
+	// An interrupted turn must not leave incomplete assistant/tool messages in history.
+	previousMessages := append([]message(nil), a.Messages...)
+	defer func() {
+		if ctx.Err() != nil {
+			a.Messages = previousMessages
+		}
+	}()
+	if err := ctx.Err(); err != nil { return "", err }
 	if a.Key == "" && a.URL == "https://api.openai.com/v1" {
 		return "", errors.New("set SUPPORT_API_KEY (and optionally SUPPORT_API_BASE / SUPPORT_MODEL)")
 	}
@@ -204,6 +212,7 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 		callLimit = 16
 	}
 	for step := 0; step < rounds+1; step++ {
+		if err := ctx.Err(); err != nil { return "", err }
 		if step == rounds {
 			return "", fmt.Errorf("agent reached %d model rounds; narrow your request", rounds)
 		}
@@ -274,6 +283,7 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 			return answer, nil
 		}
 		for _, call := range msg.ToolCalls {
+			if err := ctx.Err(); err != nil { return "", err }
 			if callsUsed >= callLimit {
 				a.Messages = append(a.Messages, message{Role: "tool", ToolCallID: call.ID, Content: `{"error":"tool budget exceeded; provide final diagnosis from observations already collected"}`})
 				continue
