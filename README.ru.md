@@ -64,3 +64,16 @@ make run-plugin
 - [Английский README](README.md).
 
 Ограничения: нет MCP-сервера, полноценного управления permissions и безопасного approval для изменений; `kubectl` выполняется локально доверенным Go-модулем; агента нельзя считать детерминированным диагностическим workflow.
+
+
+### Расширения и зависимости
+
+По умолчанию `PLUGIN_PATH=./plugins`. При сборке `make plugin` загрузчик находит `plugins/diagnostics/target/wasm32-wasip1/release/*.wasm`. Можно положить готовые файлы в `plugins/*.wasm` или указать собственную директорию: `PLUGIN_PATH=/opt/plugins make run-plugin`. Поддерживается несколько WASM-плагинов. Старый `SUPPORT_PLUGIN` остаётся резервным вариантом.
+
+```bash
+make deps     # go mod tidy: сформировать/обновить go.sum
+make plugin
+make run-plugin
+```
+
+Системная инструкция агента хранится в `internal/agent/system_prompt.md`, а не в длинной строке Go-кода. Подробнее: [агент](docs/agent.md) и [плагины](docs/plugins.md).
