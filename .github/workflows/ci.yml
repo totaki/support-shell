@@ -52,6 +52,8 @@ jobs:
         run: cargo test --manifest-path plugins/sdk/Cargo.toml
       - name: Build diagnostics WASM
         run: cargo build --manifest-path plugins/diagnostics/Cargo.toml --target wasm32-wasip1 --release
+      - name: Test network diagnostics
+        run: cargo test --manifest-path plugins/network/Cargo.toml --lib
       - name: Build network WASM
         run: cargo build --manifest-path plugins/network/Cargo.toml --target wasm32-wasip1 --release
       - name: Verify WASM builds
