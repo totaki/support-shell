@@ -16,3 +16,10 @@ func TestManifestValidate(t *testing.T) {
     }
     for _, tc := range cases { t.Run(tc.name,func(t *testing.T){ m:=valid; m.Commands=append([]Command(nil),valid.Commands...);tc.change(&m);if err:=m.Validate();err==nil{t.Fatal("expected validation error")} }) }
 }
+
+func TestExtendedManifestMetadata(t *testing.T) {
+ m := Manifest{APIVersion: APIVersion, Name:"network", Version:"0.2.0", Title:"Network", Description:"Inspect nodes", Commands:[]Command{{ID:"network.health",Path:"network health",Risk:RiskRead,InputSchema:map[string]any{"type":"object"},Examples:[]Example{{Command:"network health"}}}}}
+ if err:=m.Validate();err!=nil {t.Fatal(err)}
+ m.Commands[0].InputSchema=map[string]any{"type":"array"}
+ if err:=m.Validate();err==nil {t.Fatal("schema type must be object")}
+}
