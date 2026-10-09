@@ -6,6 +6,7 @@ use serde_json::Value;
 pub const API_VERSION: &str = "support.shell/v1alpha1";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Command {
     pub id: String,
     pub path: String,
@@ -13,26 +14,37 @@ pub struct Command {
     pub risk: String,
     #[serde(default)]
     pub args: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_schema: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_schema: Option<Value>,
+    #[serde(default,skip_serializing_if = "Vec::is_empty")]
+    pub examples: Vec<Example>,
 }
 impl Command {
     pub fn read(id: &str, path: &str, description: &str, args: &[&str]) -> Self {
         Self { id: id.into(), path: path.into(), description: description.into(),
-            risk: "read".into(), args: args.iter().map(|s| (*s).into()).collect() }
+            risk: "read".into(), args: args.iter().map(|s| (*s).into()).collect(), input_schema: None, output_schema:None, examples:vec![] }
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Example { pub command: String, pub description: String }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Manifest {
     pub api_version: String,
     pub name: String,
     pub version: String,
+    #[serde(default)] pub title: String,
+    #[serde(default)] pub description: String,
+    #[serde(default)] pub author: String,
     pub capabilities: Vec<String>,
     pub commands: Vec<Command>,
 }
 impl Manifest {
     pub fn new(name: &str, version: &str, capabilities: &[&str], commands: Vec<Command>) -> Self {
-        Self { api_version: API_VERSION.into(), name: name.into(), version: version.into(),
+        Self { api_version: API_VERSION.into(), name: name.into(), version: version.into(), title:String::new(), description:String::new(), author:String::new(),
             capabilities: capabilities.iter().map(|s| (*s).into()).collect(), commands }
     }
 }
