@@ -1,30 +1,27 @@
 use extism_pdk::*;
-use serde::Deserialize;
+use support_plugin_sdk::{Command, Manifest, Request, host_request};
 use serde_json::{json, Value};
 
 #[host_fn]
 extern "ExtismHost" { fn host_call(request: String) -> String; }
 
-#[derive(Deserialize)]
-struct Request { command: String, input: Value }
-
 fn call(id: &str, input: Value) -> FnResult<Value> {
-    let req = json!({"command": id, "input": input});
-    let raw = unsafe { host_call(req.to_string())? };
+    let raw = unsafe { host_call(host_request(id, input))? };
     let result: Value = serde_json::from_str(&raw)?;
     Ok(result)
 }
 
 #[plugin_fn]
 pub fn describe(_: String) -> FnResult<String> {
-    Ok(json!({"apiVersion":"support.shell/v1alpha1", "name":"diagnostics", "version":"0.1.0", "capabilities":["k8s.pods","k8s.events"], "commands":[
-        {"id":"diagnostics.k8s.inspect", "path":"diagnose k8s", "description":"Inspect live Kubernetes pods and events for a namespace via host read-only tools (same underlying source: kubectl)", "risk":"read", "args":["namespace"]}
-    ]}).to_string())
+    Ok(serde_json::to_string(&Manifest::new("diagnostics", "0.1.0",
+        &["k8s.pods", "k8s.events"],
+        vec![Command::read("diagnostics.k8s.inspect", "diagnose k8s",
+            "Inspect Kubernetes pods and events", &["namespace"])]))?)
 }
 
 #[plugin_fn]
 pub fn execute(input: String) -> FnResult<String> {
-    let req: Request = serde_json::from_str(&input)?;
+    let req = Request::parse(&input)?;
     if req.command != "diagnostics.k8s.inspect" { return Ok(json!({"error":"unknown operation"}).to_string()); }
     let ns = req.input.get("namespace").and_then(Value::as_str).filter(|s| !s.is_empty()).unwrap_or("default");
     let pods = call("k8s.pods", json!({"namespace": ns}))?;
