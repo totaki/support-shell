@@ -86,3 +86,7 @@ network health
 ```
 
 Результат пригоден для агентов и автоматизации; исходное `network nodes` сохранено. Unit-тесты анализа находятся в `plugins/network/src/analysis.rs`.
+
+## Документация каждого плагина
+
+Каждый плагин хранит собственный `README.md` рядом с `Cargo.toml`, с назначением, командами, примерами, запрашиваемыми capabilities и ограничениями. Текущие примеры: [Diagnostics](../plugins/diagnostics/README.md) и [Network](../plugins/network/README.md). Описание плагина не заменяет контракт `describe()`: команды и capabilities определяются манифестом WASM.
