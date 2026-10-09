@@ -53,3 +53,22 @@ plugins info diagnostics
 ```
 
 This is not a persistent package manager: it does not yet support install/uninstall, plugin health checks, failed-plugin history, signatures, or hot reload. Startup still fails on invalid WASM plugins or duplicate registrations; the inventory is only populated after successful registration.
+
+## Rust SDK и второй плагин
+
+Общие JSON-типы для Rust-плагинов находятся в `plugins/sdk` (`support-plugin-sdk`): `Manifest`, `Command`, `Request`, `host_request()` и константа `API_VERSION`. SDK **не** содержит Extism runtime: точками входа `describe`, `execute`, `complete` управляет `extism-pdk` каждого плагина. Плагины используют локальную Cargo-зависимость `support-plugin-sdk = { path = "../sdk" }`.
+
+Есть два примера независимых плагинов: `diagnostics` (`diagnose k8s <namespace>`, capabilities `k8s.pods` и `k8s.events`) и `network` (`network nodes`, capability `k8s.nodes`). После `make plugin && make run-plugin` оба автоматически обнаруживаются в `PLUGIN_PATH=./plugins` и доступны через `plugins list`.
+
+Новый плагин: создайте `plugins/<name>/Cargo.toml` с `crate-type = ["cdylib"]`, добавьте `extism-pdk`, `serde_json` и локальный SDK. В `describe` верните `Manifest::new`, в `execute` разбирайте `Request::parse`, для Host API формируйте запрос `host_request`. Важно объявить только необходимые read-only capabilities; сейчас разрешения проверяются также встроенным allowlist Go Host.
+
+```bash
+make plugin
+make run-plugin
+# plugins list
+# plugins info diagnostics
+# plugins info network
+# network nodes
+```
+
+CI запускает Rust SDK tests и отдельно компилирует оба WASM. Полноценное end-to-end тестирование исполнения через Extism по-прежнему требует runtime-проверки.
