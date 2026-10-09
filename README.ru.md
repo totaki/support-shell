@@ -95,3 +95,7 @@ make run-plugin
 Второй WASM-плагин теперь умеет не только `network nodes`, но и `network health`: проверяет Ready и Pressure по всем полученным нодам и возвращает структурированные findings (severity, code, source, condition). Неизвестные условия не считаются здоровыми. Подробнее — [docs/plugins.md](docs/plugins.md).
 
 Небольшие улучшения UX: `network health` по умолчанию отображает таблицу findings; `Ctrl+C` при работе агента отменяет активный запрос и возвращает к Shell. Меню выбора не перерисовывает строку подсказки при каждом нажатии стрелки. У каждого WASM-плагина есть собственная документация: [diagnostics](plugins/diagnostics/README.md), [network](plugins/network/README.md).
+
+### Единая документация инструментов
+
+Плагины могут описывать себя в `describe()`: `title`, `description`, `author`, схемы `inputSchema` / `outputSchema` и примеры `examples`. Теперь это видно через `plugins list`, `plugins info network` и `help network health`; встроенный агент получает схему и примеры из того же Registry. Старые плагины совместимы. MCP-адаптер поверх Registry — следующий этап, пока он не реализован.
