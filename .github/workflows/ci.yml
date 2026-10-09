@@ -19,12 +19,20 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Resolve Go modules
+        run: go mod tidy
+      - name: Check Go module declarations
+        run: go mod edit -json >/dev/null
       - name: Test
         run: go test -race ./...
       - name: Vet
         run: go vet ./...
       - name: Build
         run: go build ./cmd/support
+      - name: Test Extism build tag
+        run: go test -tags extism ./...
+      - name: Build Extism host
+        run: go build -tags extism ./cmd/support
 
   wasm:
     name: Rust WASM plugin
