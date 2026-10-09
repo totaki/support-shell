@@ -1,10 +1,40 @@
 # Plugin API (v1alpha1)
 
-This package defines the **versioned, JSON-serializable** manifest and request/response types for Support Shell plugins.
+The `pkg/pluginapi` package defines versioned, JSON-serializable descriptions of Support Shell extensions.
 
-- `Manifest` declares plugin identity, commands and requested capabilities.
-- `Command` describes CLI command paths, stable IDs and risk levels.
-- `Request` / `Result` are transport-neutral envelopes.
-- `Validate()` rejects incompatible API versions and malformed/duplicate commands.
+The Extism loader now validates `describe()` with `Manifest.Validate()` before registering any command. The diagnostics Rust plugin has migrated to the new format.
 
-**Migration status:** this is the first additive extraction of the SDK contract. The existing Extism adapter still has its legacy describe/execute protocol, and should be migrated in a separate change. This package does not yet implement capability enforcement; a declaration is not a permission grant.
+## describe() example
+
+```json
+{
+  "apiVersion": "support.shell/v1alpha1",
+  "name": "diagnostics",
+  "version": "0.1.0",
+  "capabilities": ["k8s.pods", "k8s.events"],
+  "commands": [{
+    "id": "diagnostics.k8s.inspect",
+    "path": "diagnose k8s",
+    "description": "Inspect Kubernetes pods and events",
+    "risk": "read",
+    "args": ["namespace"]
+  }]
+}
+```
+
+The `capabilities` list is **not** automatic authorization. Extism Host calls are permitted only when the command is both requested in the manifest and present in the Host's hard-coded read-only allowlist. Unsupported capabilities cause plugin loading to fail.
+
+The legacy manifest without `apiVersion`, `version`, and `capabilities` is no longer accepted. Rebuild the diagnostics WASM plugin after updating.
+
+`Request` and `Result` types are transport-neutral. The existing `execute()` response remains a raw JSON value, not yet wrapped in `Result`, to preserve compatibility with Shell/Agent.
+
+## Testing
+
+```bash
+go test ./...
+go vet ./...
+make plugin
+make run-plugin
+```
+
+GitHub Actions runs Go tests/race/vet and compiles the Rust WASM example. Full Extism Host integration still requires an end-to-end run with the Extism-tagged binary.
