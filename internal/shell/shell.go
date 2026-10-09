@@ -421,7 +421,7 @@ func (s *Shell) raw(ctx context.Context) bool {
 			if ed.cursor != len(ed.line) {
 				break
 			}
-			matches := completionMatches(string(ed.line), s.Registry.CompleteWithContext(ctx, string(ed.line)))
+			matches := completionMatches(string(ed.line), s.completions(ctx, string(ed.line)))
 			if len(matches) == 1 {
 				ed.set(matches[0])
 				if _, _, ok := s.Registry.Resolve(matches[0]); ok {
