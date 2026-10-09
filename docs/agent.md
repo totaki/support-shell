@@ -33,3 +33,8 @@ SUPPORT_AGENT_MAX_ROUNDS=8
 ```
 
 OpenCode Go receives a stable `x-opencode-session` header; `agent reset` rotates the session and resets history. Tool calls are traced with their arguments and durations. An agent response can be saved with `report save`.
+
+
+## Prompt maintenance
+
+The complete model instruction lives at `internal/agent/system_prompt.md` and is embedded in the binary via `//go:embed`. Changes require recompiling the Go binary. It tells the agent to use previous named resources as investigative context while refreshing live observations, to avoid broad claims when only a subset was checked, to report missing previous logs honestly, and to use clean Russian. This remains instruction-level guidance, not deterministic enforcement.
