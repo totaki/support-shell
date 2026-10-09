@@ -17,7 +17,7 @@ fn call(id: &str, input: Value) -> FnResult<Value> {
 
 #[plugin_fn]
 pub fn describe(_: String) -> FnResult<String> {
-    Ok(json!({"name":"diagnostics", "commands":[
+    Ok(json!({"apiVersion":"support.shell/v1alpha1", "name":"diagnostics", "version":"0.1.0", "capabilities":["k8s.pods","k8s.events"], "commands":[
         {"id":"diagnostics.k8s.inspect", "path":"diagnose k8s", "description":"Inspect live Kubernetes pods and events for a namespace via host read-only tools (same underlying source: kubectl)", "risk":"read", "args":["namespace"]}
     ]}).to_string())
 }
