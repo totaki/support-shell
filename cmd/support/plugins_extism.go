@@ -6,22 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"example.com/support-shell/internal/core"
+	"example.com/support-shell/pkg/pluginapi"
 	"fmt"
 	extism "github.com/extism/go-sdk"
 	"os"
 	"time"
 )
 
-type descriptor struct {
-	Name     string `json:"name"`
-	Commands []struct {
-		ID          string   `json:"id"`
-		Path        string   `json:"path"`
-		Description string   `json:"description"`
-		Risk        string   `json:"risk"`
-		Args        []string `json:"args"`
-	} `json:"commands"`
-}
 
 func loadPlugins(r *core.Registry) error {
 	path := os.Getenv("SUPPORT_PLUGIN")
@@ -30,6 +21,7 @@ func loadPlugins(r *core.Registry) error {
 	}
 	// The extension is intentionally granted only one capability.
 	// The host function is restricted to read-only built-in commands.
+	var granted map[string]bool
 	host := extism.NewHostFunctionWithStack("host_call", func(ctx context.Context, p *extism.CurrentPlugin, stack []uint64) {
 		raw, err := p.ReadBytes(stack[0])
 		if err != nil {
@@ -42,7 +34,7 @@ func loadPlugins(r *core.Registry) error {
 		if err = json.Unmarshal(raw, &req); err != nil {
 			return
 		}
-		if !allowedPluginCall(req.Command) {
+		if !granted[req.Command] || !allowedPluginCall(req.Command) {
 			return
 		}
 		result, err := r.Execute(ctx, req.Command, req.Input)
@@ -63,14 +55,25 @@ func loadPlugins(r *core.Registry) error {
 	if err != nil {
 		return fmt.Errorf("describe: %w", err)
 	}
-	var d descriptor
+	var d pluginapi.Manifest
 	if err = json.Unmarshal(data, &d); err != nil {
-		return err
+		return fmt.Errorf("decode plugin manifest: %w", err)
+	}
+	if err = d.Validate(); err != nil {
+		return fmt.Errorf("invalid plugin manifest: %w", err)
+	}
+	granted = make(map[string]bool, len(d.Capabilities))
+	for _, capability := range d.Capabilities {
+		if !allowedPluginCall(capability) {
+			return fmt.Errorf("plugin %s requests forbidden capability %q", d.Name, capability)
+		}
+		granted[capability] = true
 	}
 	for _, entry := range d.Commands {
-		c := core.Command{ID: entry.ID, Path: entry.Path, Description: entry.Description, Risk: entry.Risk, Args: entry.Args}
+		c := core.Command{ID: entry.ID, Path: entry.Path, Description: entry.Description, Risk: string(entry.Risk), Args: entry.Args}
+		commandID := c.ID
 		c.Handler = func(ctx context.Context, input map[string]any) (any, error) {
-			payload, _ := json.Marshal(map[string]any{"command": c.ID, "input": input})
+			payload, _ := json.Marshal(pluginapi.Request{Command: commandID, Input: input})
 			callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 			exit, resp, err := plugin.CallWithContext(callCtx, "execute", payload)
