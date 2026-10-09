@@ -14,6 +14,9 @@ type Command struct {
 	Path        string                                             `json:"path"`
 	Description string                                             `json:"description"`
 	Risk        string                                             `json:"risk"`
+	InputSchema map[string]any `json:"inputSchema,omitempty"`
+	OutputSchema map[string]any `json:"outputSchema,omitempty"`
+	Examples []string `json:"examples,omitempty"`
 	Args        []string                                           `json:"args,omitempty"`
 	Handler     func(context.Context, map[string]any) (any, error) `json:"-"`
 	Completer   func(context.Context, string) []string             `json:"-"`
