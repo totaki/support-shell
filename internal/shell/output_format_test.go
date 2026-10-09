@@ -42,3 +42,10 @@ func TestNetworkHealthOutput(t *testing.T) {
         t.Fatalf("bad JSON output: %q", raw)
     }
 }
+
+func TestPluginDescriptionInList(t *testing.T) {
+ s:=&Shell{}
+ result:=map[string]any{"plugins":[]any{map[string]any{"name":"network","version":"0.2.0","status":"loaded","description":"Inspects nodes","commands":[]any{},"capabilities":[]any{}}}}
+ out:=s.renderResult("plugins.list",result)
+ if !strings.Contains(out,"Inspects nodes"){t.Fatal(out)}
+}
