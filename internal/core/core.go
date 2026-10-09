@@ -28,6 +28,9 @@ func (r *Registry) Add(c Command) error {
 	if c.ID == "" || c.Path == "" || c.Handler == nil {
 		return errors.New("invalid command")
 	}
+	for _, existing := range r.commands {
+        if existing.ID == c.ID { return fmt.Errorf("duplicate command ID %s", c.ID) }
+    }
 	if _, ok := r.commands[c.Path]; ok {
 		return fmt.Errorf("duplicate command %s", c.Path)
 	}
