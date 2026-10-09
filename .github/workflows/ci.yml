@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go tests and vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Test
+        run: go test -race ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build ./cmd/support
+
+  wasm:
+    name: Rust WASM plugin
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/diagnostics
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: plugins/diagnostics
+      - name: Build WASM plugin
+        run: cargo build --target wasm32-wasip1 --release
+      - name: Check artifact
+        run: test -s target/wasm32-wasip1/release/support_diagnostics.wasm
