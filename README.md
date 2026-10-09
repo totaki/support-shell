@@ -6,6 +6,12 @@
 
 Interactive Go shell with a shared command registry, persisted history, ANSI colors, tab completion, built-in modules, an OpenAI-compatible tool-calling agent, and an experimental Extism/WASM bridge.
 
+## Current plugin discovery and agent prompt
+
+For Extism-enabled runs, `PLUGIN_PATH` defaults to `./plugins`. The loader finds prebuilt `plugins/*.wasm` and locally compiled Rust `plugins/*/target/wasm32-wasip1/release/*.wasm`; it can load multiple modules. `SUPPORT_PLUGINS` and `SUPPORT_PLUGIN` are supported as fallbacks. Use `make deps` to synchronize `go.mod` and `go.sum`, `make plugin` to build the Rust example, and `make run-plugin` to start Extism Shell. See [plugins](docs/plugins.md).
+
+The agent's embedded system instructions are in [internal/agent/system_prompt.md](internal/agent/system_prompt.md). The prompt encourages proportional tool use, awareness of previous conversation context, fresh verification of live state, and avoiding claims about objects not examined. See [agent](docs/agent.md).
+
 ## Run
 
 Requirements: Go 1.23+, `stty` (macOS/Linux) for raw terminal editing; `kubectl` and kubeconfig only for real cluster commands.
@@ -63,7 +69,7 @@ SUPPORT_PLUGIN=plugins/diagnostics/target/wasm32-wasip1/release/support_diagnost
 # diagnose cluster prod-01
 ```
 
-The plugin exports `describe`, `execute`, `complete`. Its host callback may call only explicitly allowlisted Kubernetes read-only commands and still goes through the registry's read-only checks. Plugin network and filesystem capabilities are not granted in the intended manifest; this is a proof of concept, **not a hardened production sandbox**. The Extism adapter and Rust plugin have not been compiled together in this offline build environment; version/API compatibility may require adjustments.
+The plugin exports `describe`, `execute`, `complete`. Its host callback may call only explicitly allowlisted Kubernetes read-only commands and still goes through the registry's read-only checks. Plugin network and filesystem capabilities are not granted in the intended manifest; this is a proof of concept, **not a hardened production sandbox**. The Extism adapter is also compiled by CI with `-tags extism`. Full runtime end-to-end tests still require running a WASM plugin.
 
 ## Architecture
 
