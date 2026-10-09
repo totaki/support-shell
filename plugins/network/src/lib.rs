@@ -26,6 +26,10 @@ pub fn describe(_: String) -> FnResult<String> {
     for command in &mut manifest.commands {
         command.input_schema = Some(json!({"type":"object","properties":{},"additionalProperties":false}));
         command.examples = vec![Example{command:command.path.clone(),description:"Inspect current cluster nodes".into()}];
+        if command.id == "network.k8s.health" {
+            command.description = "Assess Kubernetes node Ready and pressure conditions; return findings with severity, evidence source and coverage".into();
+            command.output_schema = Some(json!({"type":"object","properties":{"coverage":{"type":"object"},"findings":{"type":"array"},"findings_count":{"type":"integer"},"source":{"type":"string"}}}));
+        }
     }
     manifest })?)
 }
