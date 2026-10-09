@@ -98,3 +98,7 @@ Optional, backwards-compatible manifest fields now include `title`, `description
 The same metadata feeds `plugins list` (short purpose), `plugins info NAME` (detail), `help <command path>` (arguments, examples and schemas), and the built-in AI tool definitions. Prefer JSON Schema object definitions with `properties` and `required`; use `additionalProperties: false` for tight tool interfaces. The Go Host currently validates basic schema shape in the manifest, not full input/output values at execution time. MCP exposure is a **planned adapter**, not implemented by this change.
 
 Try `plugins list`, `plugins info network`, `help network health`, or `help diagnose k8s` after rebuilding the Rust plugins. Per-plugin README files remain the place for extended how-to and safety notes.
+
+## MCP exposure
+
+With `support mcp serve`, loaded plugin commands marked `read` are automatically exposed to external MCP clients as tools. The tool name is the Registry command ID, and its description and input schema come from the same manifest used for CLI help and the embedded agent. MCP is an adapter, not a requirement on the WASM plugins themselves. See [docs/mcp.md](mcp.md).
