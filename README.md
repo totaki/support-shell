@@ -193,3 +193,5 @@ To upgrade an existing checkout, use `update.sh` with the ZIP. Go SDK for Extism
 ## Plugin manager
 
 Run `plugins list` or `plugins info diagnostics` to inspect loaded WASM modules, versions, paths, exposed commands and capabilities. Loading still requires `-tags extism`; without Extism these commands return an empty inventory. See [docs/plugins.md](docs/plugins.md).
+
+Output defaults to a readable view (`plugins list` uses a table, `plugins info NAME` uses detail fields). Use `set format json` for JSON-formatted command results, and `set format table` to switch back. In JSON mode AI answers are wrapped as `{"answer":"..."}`. Command output is visually separated from the next prompt. See [docs/shell.md](docs/shell.md).
