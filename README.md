@@ -189,3 +189,7 @@ k8s top pods kube-system
 `k8s pod restarts` returns structured PodStatus, last termination timestamps, restart counts, and configured probes. It does **not** calculate restart rate from historical counts. `--previous=true` reads the previous terminated container's logs where Kubernetes still retains them; these may no longer be available. The agent's tools now expose the optional `previous`, `timestamps`, `tail`, `since`, and `container` inputs. Existing WASM diagnostics remains available and can call the new read-only restart operation through the Host allowlist. Diagnose a restart using the actual pod name from `k8s pods kube-system`.
 
 To upgrade an existing checkout, use `update.sh` with the ZIP. Go SDK for Extism is still required for `make run-plugin`. This distribution was verified with `go test ./...` and `go vet ./...`; live Kubernetes and Rust build are not available in the build environment.
+
+## Plugin manager
+
+Run `plugins list` or `plugins info diagnostics` to inspect loaded WASM modules, versions, paths, exposed commands and capabilities. Loading still requires `-tags extism`; without Extism these commands return an empty inventory. See [docs/plugins.md](docs/plugins.md).
