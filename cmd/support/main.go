@@ -17,7 +17,7 @@ func main() {
 	command := flag.String("command", "", "execute one command and exit")
 	flag.Parse()
 	r := core.NewRegistry()
-	configureToolPolicy(r)
+	if err := configureToolPolicy(r); err != nil { fmt.Fprintln(os.Stderr, "tool policy:", err); os.Exit(1) }
 	modules.RegisterDemo(r)
 	modules.RegisterKubernetes(r)
 	manager := pluginmanager.New()
