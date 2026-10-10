@@ -46,3 +46,7 @@ Only Registry commands with `risk: read` are listed and callable. Non-read comma
 Tools use their Registry IDs as MCP names; `inputSchema` is published from the same metadata used by the embedded AI agent and CLI help. Without explicit schemas, the server creates a minimal object schema from positional argument names. Tool execution errors produce `isError: true` with a text message.
 
 The protocol implementation is intentionally compact; protocol conformance and integration with third-party clients need end-to-end verification.
+
+## Deterministic end-to-end smoke test
+
+From the repository root, run `make test-e2e`. It builds an independent `plugins/fixture` WASM module (no Kubernetes credentials or network access needed), builds the Extism-enabled Go host, and runs `scripts/e2e_mcp.py`. The script launches a real `support mcp serve` subprocess with `PLUGIN_PATH` pointing exclusively to this fixture, then verifies `initialize`, discovery via `tools/list`, execution via `tools/call`, and rejection of an invalid argument type. CI runs the same test. This validates the MCP → Registry → Extism WASM path, not a third-party MCP client's behavior or Host API calls to Kubernetes.
