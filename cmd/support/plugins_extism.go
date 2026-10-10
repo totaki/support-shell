@@ -129,13 +129,16 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 			defer cancel()
 			callMu.Lock()
 			defer callMu.Unlock()
+            if err := callCtx.Err(); err != nil { return nil, err }
 			exit, resp, err := plugin.CallWithContext(callCtx, "execute", payload)
 			if err != nil {
 				return nil, err
 			}
+			if err := callCtx.Err(); err != nil { return nil, err }
 			if exit != 0 {
 				return nil, fmt.Errorf("plugin exit %d", exit)
 			}
+            if len(resp) > 4<<20 { return nil, fmt.Errorf("plugin response exceeds 4 MiB limit") }
 			var value any
 			if err = json.Unmarshal(resp, &value); err != nil {
 				return nil, err
