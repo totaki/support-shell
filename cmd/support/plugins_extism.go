@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"sync"
 	"sort"
+	"strconv"
 	"time"
 )
 
@@ -125,7 +126,7 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 		commandID := c.ID
 		c.Handler = func(ctx context.Context, input map[string]any) (any, error) {
 			payload, _ := json.Marshal(pluginapi.Request{Command: commandID, Input: input})
-			callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			callCtx, cancel := context.WithTimeout(ctx, pluginCallTimeout())
 			defer cancel()
 			callMu.Lock()
 			defer callMu.Unlock()
@@ -159,4 +160,14 @@ func allowedPluginCall(id string) bool {
 		return true
 	}
 	return false
+}
+
+// A bounded timeout keeps runaway guests from monopolizing the shell.
+func pluginCallTimeout() time.Duration {
+    if raw := os.Getenv("SUPPORT_PLUGIN_TIMEOUT_MS"); raw != "" {
+        if ms, err := strconv.Atoi(raw); err == nil && ms >= 50 && ms <= 120000 {
+            return time.Duration(ms) * time.Millisecond
+        }
+    }
+    return 10 * time.Second
 }
