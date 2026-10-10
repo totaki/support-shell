@@ -15,7 +15,7 @@ func (s *Shell) completions(ctx context.Context, prefix string) []string {
  for _,cmd:=range s.Registry.ListFor(core.SurfaceCLI){candidates=append(candidates,cmd.Path)}
  if strings.HasPrefix(prefix,"help ") {
   candidates=nil
-  for _,cmd:=range s.Registry.List(){
+  for _,cmd:=range s.Registry.ListFor(core.SurfaceCLI){
    candidates=append(candidates,"help "+cmd.Path)
   }
  }
@@ -28,7 +28,12 @@ func (s *Shell) completions(ctx context.Context, prefix string) []string {
  if !(strings.HasPrefix(prefix,"help ") || strings.HasPrefix(prefix,"set format ")) {
   candidates=append(candidates,s.Registry.CompleteWithContext(ctx,prefix)...)
  }
- return uniqueCompletions(prefix,candidates)
+ filtered:=[]string{}
+ for _,candidate:=range candidates {
+  if cmd,_,ok:=s.Registry.Resolve(candidate);ok && !s.Registry.Allowed(core.SurfaceCLI,cmd) {continue}
+  filtered=append(filtered,candidate)
+ }
+ return uniqueCompletions(prefix,filtered)
 }
 func uniqueCompletions(prefix string, values []string) []string {
  out:=[]string{}
