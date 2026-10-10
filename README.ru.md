@@ -1,6 +1,6 @@
 # Support Shell
 
-[![Go coverage](https://codecov.io/gh/totaki/support-shell/graph/badge.svg)](https://codecov.io/gh/totaki/support-shell)
+[![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
 Интерактивная консоль поддержки на Go: команды и автодополнение, Kubernetes через локальный kubectl, AI-агент через OpenAI-compatible Chat Completions и расширения Extism/WASM.
 
