@@ -38,3 +38,7 @@ An optional stdio MCP server (`internal/mcp`) publishes the same read-only Regis
 ## Tool access policy
 
 Registry maintains a per-interface policy for `cli`, `agent`, and `mcp`. CLI commands retain their existing explicit approval rule for writes. Agent and MCP expose only `risk: read` tools, excluding demo cluster tools, and each interface can additionally deny command IDs. The policy is checked both during discovery and during invocation (no reliance on tool-list filtering alone). Startup reads comma-separated exact command IDs from `SUPPORT_DENY_CLI`, `SUPPORT_DENY_AGENT`, and `SUPPORT_DENY_MCP`. The deny lists are process-local and static until restart. This is application-layer policy, not Kubernetes RBAC or WASM sandboxing.
+
+## YAML tool permissions
+
+Set `SUPPORT_POLICY_FILE=/path/to/tool-policy.yaml` to load interface deny lists at startup. Example: [examples/tool-policy.yaml](../examples/tool-policy.yaml). YAML uses `deny.cli`, `deny.agent`, and `deny.mcp`, each a sequence of **exact command IDs**. Environment variables `SUPPORT_DENY_CLI`, `SUPPORT_DENY_AGENT`, `SUPPORT_DENY_MCP` add further restrictions; they never override or grant access. Invalid files fail startup. The interactive command `tools permissions` prints all registered tools and their access decisions, including reasons for denials. Changes take effect after restart. These restrictions are separate from Kubernetes RBAC.
