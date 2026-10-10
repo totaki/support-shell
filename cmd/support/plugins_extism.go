@@ -139,20 +139,18 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 			defer callMu.Unlock()
             if err := callCtx.Err(); err != nil { return nil, err }
 			exit, resp, err := plugin.CallWithContext(callCtx, "execute", payload)
-            if callCtx.Err() != nil {
-                // An interrupted wazero module is closed. Rebuild the
+            if callCtx.Err() != nil || err != nil {
+                // A timed-out or trapped wazero module may be closed. Rebuild the
                 // instance while holding callMu so the next call is safe.
                 _ = plugin.Close(context.Background())
                 replacement, replacementErr := extism.NewPlugin(context.Background(), manifest, config, hosts)
                 if replacementErr != nil {
-                    return nil, fmt.Errorf("plugin interrupted: %w; rebuild failed: %v", callCtx.Err(), replacementErr)
+                    return nil, fmt.Errorf("plugin call failed (%v); rebuild failed: %w", err, replacementErr)
                 }
                 plugin = replacement
-                return nil, callCtx.Err()
+                if callCtx.Err() != nil { return nil, callCtx.Err() }
+                return nil, err
             }
-			if err != nil {
-				return nil, err
-			}
 			if err := callCtx.Err(); err != nil { return nil, err }
 			if exit != 0 {
 				return nil, fmt.Errorf("plugin exit %d", exit)
