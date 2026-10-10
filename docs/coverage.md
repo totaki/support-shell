@@ -42,3 +42,7 @@ Extism go-sdk v1.7.1 enables wazero `WithCloseOnContextDone(true)` only when `ex
 - `internal/mcp/compatibility_test.go` verifies the MCP initialize handshake, string JSON-RPC IDs, notification suppression, ping, discovery metadata, and structured tool results.
 - `scripts/e2e_cli.py` starts the compiled CLI non-interactively with the real WASM fixture, checks help, command listing, JSON output, history, and clean exit. The test uses a temporary config directory to avoid modifying the runner's normal shell history.
 - Interactive terminal keystrokes (Tab, Ctrl+R and Ctrl+C) still need a dedicated pseudo-terminal E2E harness; the non-interactive smoke test does not claim to cover those.
+
+## Interactive terminal E2E
+
+`scripts/e2e_pty.py` uses the Python standard-library `pty` module on Linux to test the built CLI as a real terminal. It covers Tab completion, Up-arrow history, Ctrl+R reverse search, Ctrl+C draft cancellation, and rejecting/accepting a Kubernetes context switch. A temporary executable `kubectl` stub and isolated config directory prevent the test from touching any real Kubernetes cluster or user history. The PTY test is part of the CI WASM job after building the Extism-enabled binary.
