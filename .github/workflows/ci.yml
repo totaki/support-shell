@@ -115,6 +115,11 @@ jobs:
         run: |
           python3 scripts/e2e_wasm_timeout.py
           echo "- WASM infinite-loop interruption and recovery: passed" >> "$GITHUB_STEP_SUMMARY"
+      - name: Run CLI end-to-end smoke test
+        timeout-minutes: 1
+        run: |
+          python3 scripts/e2e_cli.py
+          echo "- CLI help, JSON, history and exit: passed" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify WASM builds
         run: |
           test -s plugins/diagnostics/target/wasm32-wasip1/release/support_diagnostics.wasm
