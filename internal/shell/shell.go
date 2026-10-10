@@ -102,6 +102,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		return true
 	}
 	if c, args, ok := s.Registry.Resolve(line); ok {
+		if !s.Registry.Allowed(core.SurfaceCLI, c) { fmt.Fprintln(os.Stderr, "error: tool not permitted in CLI"); return true }
 		if c.ID == "k8s.context.use" {
 			input, err := core.ParseInput(c, args)
 			if err != nil {
@@ -128,7 +129,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		input, err := core.ParseInput(c, args)
 		if err == nil {
 			var result any
-			result, err = s.Registry.Execute(ctx, c.ID, input)
+			result, err = s.Registry.ExecuteFor(ctx, core.SurfaceCLI, c.ID, input)
 			if err == nil {
 				fmt.Println(indentOutput(s.renderResult(c.ID, result)))
 				return true
