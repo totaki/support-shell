@@ -24,3 +24,9 @@ Go unit/integration coverage is collected with `go test -race -v -covermode=atom
 Run `go test ./internal/core ./internal/mcp ./cmd/support` for a focused check. The aggregate Coveralls percentage includes other Go packages; it is not an indication of WASM/Rust coverage or real Kubernetes behavior. No minimum threshold is enforced until we have a confirmed baseline.
 
 - `internal/agent/runtime_boundaries_test.go`: per-turn tool-call budget, suppression of advertised tools after the budget is spent, rollback of conversation history on cancellation, and rejecting schema-invalid model tool calls before handler execution.
+
+## Agent and WASM failure-path checks
+
+- `internal/agent/hardening_test.go`: model HTTP errors and malformed responses roll back unfinished conversation turns; malformed tool-call arguments never reach the handler.
+- `internal/agent/retry_test.go`: simulated model HTTP timeout after a tool call causes only the model HTTP request to retry, not a duplicate tool execution.
+- WASM host execution checks context cancellation around the plugin call and caps the returned JSON payload at 4 MiB. These guards do not yet prove that every Extism/WASI guest can be preempted immediately while it is running.
