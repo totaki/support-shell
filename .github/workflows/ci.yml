@@ -56,6 +56,14 @@ jobs:
         run: cargo test --manifest-path plugins/network/Cargo.toml --lib
       - name: Build network WASM
         run: cargo build --manifest-path plugins/network/Cargo.toml --target wasm32-wasip1 --release
+      - name: Build E2E fixture
+        run: cargo build --manifest-path plugins/fixture/Cargo.toml --target wasm32-wasip1 --release
+      - name: Build Extism host for E2E
+        run: |
+          go mod tidy
+          go build -tags extism -o support ./cmd/support
+      - name: Run MCP WASM E2E
+        run: python3 scripts/e2e_mcp.py
       - name: Verify WASM builds
         run: |
           test -s plugins/diagnostics/target/wasm32-wasip1/release/support_diagnostics.wasm
