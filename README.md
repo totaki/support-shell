@@ -1,5 +1,7 @@
 # Support Shell — runnable reference implementation
 
+[![CI](https://github.com/totaki/support-shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/totaki/support-shell/actions/workflows/ci.yml)
+
 [![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
 > **Documentation:** [Русский README](README.ru.md) · [Architecture](docs/architecture.md) · [Shell commands](docs/shell.md) · [Agent behavior](docs/agent.md) · [WASM plugins](docs/plugins.md)
