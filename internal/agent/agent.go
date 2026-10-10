@@ -174,10 +174,7 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 	}
 	tools := []any{}
 	toolIDs := map[string]string{}
-	for _, c := range a.Registry.List() {
-		if c.Risk != "read" || strings.HasPrefix(c.ID, "demo.cluster.") {
-			continue
-		}
+	for _, c := range a.Registry.ListFor(core.SurfaceAgent) {
 		properties := map[string]any{}
 		required := []string{}
 		for _, arg := range c.Args {
@@ -306,7 +303,7 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 				continue
 			}
 			started := time.Now()
-			result, e := a.Registry.Execute(ctx, commandID, input)
+			result, e := a.Registry.ExecuteFor(ctx, core.SurfaceAgent, commandID, input)
 			elapsed := time.Since(started)
 			content := compactToolResult(result)
 			if e != nil {
