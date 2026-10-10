@@ -1,6 +1,6 @@
 # Support Shell — runnable reference implementation
 
-[![Go coverage](https://codecov.io/gh/totaki/support-shell/graph/badge.svg)](https://codecov.io/gh/totaki/support-shell)
+[![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
 > **Documentation:** [Русский README](README.ru.md) · [Architecture](docs/architecture.md) · [Shell commands](docs/shell.md) · [Agent behavior](docs/agent.md) · [WASM plugins](docs/plugins.md)
 >
