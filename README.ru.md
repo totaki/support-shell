@@ -1,6 +1,8 @@
 # Support Shell
 
 [![CI](https://github.com/totaki/support-shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/totaki/support-shell/actions/workflows/ci.yml)
+**Базовая версия MVP:** [v0.1.0 — изменения](CHANGELOG.md) · [порядок релиза](docs/releases.md). Git-тег и GitHub Release публикуются отдельно.
+
 
 [![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
