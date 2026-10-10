@@ -60,11 +60,18 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	case "quit", "exit":
 		return false
 	case "help":
-		fmt.Println("Built-in: help, commands, history, set format table|json, help <command>, report, report save, agent reset, exit")
+		fmt.Println("Built-in: help, commands, tools permissions, history, set format table|json, help <command>, report, report save, agent reset, exit")
 		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Printf("  %-24s %s\n", c.Path, c.Description)
 		}
 		return true
+	case "tools permissions":
+        fmt.Println("TOOL ID                       CLI          AGENT        MCP")
+        for _,c:=range s.Registry.List(){
+            state:=func(surface core.Surface)string{ reason:=s.Registry.AccessReason(surface,c); if reason=="" {return "allowed"}; return reason }
+            fmt.Printf("%-29s %-12s %-12s %s\n",c.ID,state(core.SurfaceCLI),state(core.SurfaceAgent),state(core.SurfaceMCP))
+        }
+        return true
 	case "commands":
 		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Println(c.Path)
