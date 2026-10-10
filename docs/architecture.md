@@ -34,3 +34,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs Go tests/race/vet/build and Rus
 
 An optional stdio MCP server (`internal/mcp`) publishes the same read-only Registry commands through JSON-RPC `tools/list` and `tools/call`; it does not execute standalone plugin implementations or bypass Registry risk checks. WASM plugins remain implementation modules with their own Extism Host capabilities. See [mcp.md](mcp.md).
 
+
+## Tool access policy
+
+Registry maintains a per-interface policy for `cli`, `agent`, and `mcp`. CLI commands retain their existing explicit approval rule for writes. Agent and MCP expose only `risk: read` tools, excluding demo cluster tools, and each interface can additionally deny command IDs. The policy is checked both during discovery and during invocation (no reliance on tool-list filtering alone). Startup reads comma-separated exact command IDs from `SUPPORT_DENY_CLI`, `SUPPORT_DENY_AGENT`, and `SUPPORT_DENY_MCP`. The deny lists are process-local and static until restart. This is application-layer policy, not Kubernetes RBAC or WASM sandboxing.
