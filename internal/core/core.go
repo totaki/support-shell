@@ -21,7 +21,7 @@ type Command struct {
 	Handler     func(context.Context, map[string]any) (any, error) `json:"-"`
 	Completer   func(context.Context, string) []string             `json:"-"`
 }
-type Registry struct{ commands map[string]Command }
+type Registry struct{ commands map[string]Command; policy ToolPolicy }
 
 func NewRegistry() *Registry { return &Registry{commands: map[string]Command{}} }
 func (r *Registry) Add(c Command) error {
