@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -31,15 +30,13 @@ jobs:
           set -o pipefail
           go test -race -v -covermode=atomic -coverprofile=coverage.out ./... | tee go-tests.log
           go tool cover -func=coverage.out | tee coverage.txt
-      - name: Upload Go coverage to Codecov
+      - name: Upload Go coverage to Coveralls
         if: success() && github.event_name != 'pull_request'
-        uses: codecov/codecov-action@v5
+        uses: coverallsapp/github-action@v2
         with:
-          files: ./coverage.out
-          flags: go
-          name: go-unit-integration
-          use_oidc: true
-          fail_ci_if_error: false
+          file: coverage.out
+          format: golang
+          flag-name: go
       - name: Coverage summary
         if: always()
         run: |
