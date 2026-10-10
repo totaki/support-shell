@@ -1,0 +1,10 @@
+# Optional policy file: set SUPPORT_POLICY_FILE to this path.
+# Values must be exact Registry command IDs; restrictions only deny.
+deny:
+  cli:
+    - k8s.pod.logs
+  agent:
+    - k8s.events
+  mcp:
+    - k8s.pod.logs
+    - k8s.events
