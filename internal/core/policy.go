@@ -1,5 +1,7 @@
 package core
 
+import ("context";"fmt")
+
 // Surface identifies the interface invoking a tool.
 type Surface string
 
@@ -25,4 +27,14 @@ func (r *Registry) ListFor(surface Surface) []Command {
  result:=[]Command{}
  for _,c:=range r.List(){if r.Allowed(surface,c){result=append(result,c)}}
  return result
+}
+
+func (r *Registry) ExecuteFor(ctx context.Context, surface Surface, id string, in map[string]any) (any,error) {
+ for _,c:=range r.List() {
+  if c.ID==id {
+   if !r.Allowed(surface,c) { return nil,fmt.Errorf("tool %s is not permitted on %s",id,surface) }
+   return r.Execute(ctx,id,in)
+  }
+ }
+ return nil,fmt.Errorf("unknown command ID %s",id)
 }
