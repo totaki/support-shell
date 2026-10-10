@@ -36,3 +36,9 @@ Run `go test ./internal/core ./internal/mcp ./cmd/support` for a focused check. 
 ## WASM interruption regression
 
 Extism go-sdk v1.7.1 enables wazero `WithCloseOnContextDone(true)` only when `extism.Manifest.Timeout` is nonzero. The host now sets this timeout from `SUPPORT_PLUGIN_TIMEOUT_MS` (default 10000 ms), and recreates a guest instance after timeout or execution trap because the interrupted module may be closed. `scripts/e2e_wasm_timeout.py` runs an infinite-loop guest under a hard 15-second process watchdog and verifies a subsequent call works. The CI run is the authoritative confirmation that the runtime interruption and recovery work in the built environment.
+
+## MCP and CLI compatibility smoke tests
+
+- `internal/mcp/compatibility_test.go` verifies the MCP initialize handshake, string JSON-RPC IDs, notification suppression, ping, discovery metadata, and structured tool results.
+- `scripts/e2e_cli.py` starts the compiled CLI non-interactively with the real WASM fixture, checks help, command listing, JSON output, history, and clean exit. The test uses a temporary config directory to avoid modifying the runner's normal shell history.
+- Interactive terminal keystrokes (Tab, Ctrl+R and Ctrl+C) still need a dedicated pseudo-terminal E2E harness; the non-interactive smoke test does not claim to cover those.
