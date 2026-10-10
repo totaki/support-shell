@@ -27,7 +27,9 @@ func configureToolPolicy(r *core.Registry) error {
   raw,err:=os.ReadFile(path)
   if err!=nil{return fmt.Errorf("read policy file: %w",err)}
   var config policyFile
-  if err:=yaml.Unmarshal(raw,&config);err!=nil{return fmt.Errorf("invalid tool policy YAML: %w",err)}
+  decoder:=yaml.NewDecoder(strings.NewReader(string(raw)))
+  decoder.KnownFields(true)
+  if err:=decoder.Decode(&config);err!=nil{return fmt.Errorf("invalid tool policy YAML: %w",err)}
   for name,ids:=range config.Deny {
    surface:=core.Surface(name)
    if _,ok:=names[surface];!ok{return fmt.Errorf("unknown policy interface %q",name)}
