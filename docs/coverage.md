@@ -32,3 +32,7 @@ Run `go test ./internal/core ./internal/mcp ./cmd/support` for a focused check. 
 - WASM host execution checks context cancellation around the plugin call and caps the returned JSON payload at 4 MiB. These guards do not yet prove that every Extism/WASI guest can be preempted immediately while it is running.
 
 - `scripts/e2e_mcp.py` also exercises a real WASM plugin that returns malformed JSON, verifies an MCP tool error, and then calls the same plugin instance again to confirm recovery. This does **not** yet constitute a verified hard-interruption test of a nonterminating WASM guest.
+
+## WASM interruption regression
+
+Extism go-sdk v1.7.1 enables wazero `WithCloseOnContextDone(true)` only when `extism.Manifest.Timeout` is nonzero. The host now sets this timeout from `SUPPORT_PLUGIN_TIMEOUT_MS` (default 10000 ms), and recreates a guest instance after timeout or execution trap because the interrupted module may be closed. `scripts/e2e_wasm_timeout.py` runs an infinite-loop guest under a hard 15-second process watchdog and verifies a subsequent call works. The CI run is the authoritative confirmation that the runtime interruption and recovery work in the built environment.
