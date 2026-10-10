@@ -388,9 +388,14 @@ func (s *Shell) raw(ctx context.Context) bool {
 			continue
 		}
 		switch ch {
-		case 3, 4:
-			fmt.Print("\r\n")
-			return true
+		case 3:
+            // Ctrl+C while editing discards the draft, not the shell session.
+            ed = newEditor(s.History)
+            fmt.Print("\r\n")
+            redraw()
+        case 4:
+            fmt.Print("\r\n")
+            return true
 		case 13, 10:
 			fmt.Print("\r\n")
 			if !s.handleInterruptible(ctx, string(ed.line), true) {
