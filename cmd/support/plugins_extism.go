@@ -96,7 +96,14 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 		}
 		stack[0], _ = p.WriteBytes(out)
 	}, []extism.ValueType{extism.ValueTypePTR}, []extism.ValueType{extism.ValueTypePTR})
-	plugin, err := extism.NewPlugin(context.Background(), extism.Manifest{Wasm: []extism.Wasm{extism.WasmFile{Path: path}}}, extism.PluginConfig{EnableWasi: true}, []extism.HostFunction{host})
+	timeout := pluginCallTimeout()
+    // Extism go-sdk v1.7.1 enables wazero WithCloseOnContextDone only
+    // when manifest.Timeout is non-zero. An external Go context alone
+    // cannot interrupt a guest in an infinite loop.
+    manifest := extism.Manifest{Wasm: []extism.Wasm{extism.WasmFile{Path: path}}, Timeout: uint64(timeout / time.Millisecond)}
+    config := extism.PluginConfig{EnableWasi: true}
+    hosts := []extism.HostFunction{host}
+    plugin, err := extism.NewPlugin(context.Background(), manifest, config, hosts)
 	if err != nil {
 		return err
 	}
@@ -132,6 +139,17 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 			defer callMu.Unlock()
             if err := callCtx.Err(); err != nil { return nil, err }
 			exit, resp, err := plugin.CallWithContext(callCtx, "execute", payload)
+            if callCtx.Err() != nil {
+                // An interrupted wazero module is closed. Rebuild the
+                // instance while holding callMu so the next call is safe.
+                _ = plugin.Close(context.Background())
+                replacement, replacementErr := extism.NewPlugin(context.Background(), manifest, config, hosts)
+                if replacementErr != nil {
+                    return nil, fmt.Errorf("plugin interrupted: %w; rebuild failed: %v", callCtx.Err(), replacementErr)
+                }
+                plugin = replacement
+                return nil, callCtx.Err()
+            }
 			if err != nil {
 				return nil, err
 			}
