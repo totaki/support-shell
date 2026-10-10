@@ -147,11 +147,11 @@ func (a *Model) Reset() {
 	a.LastReport = ""
 	a.mu.Unlock()
 }
-func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
+func (a *Model) Ask(ctx context.Context, prompt string) (answer string, turnErr error) {
 	// An interrupted turn must not leave incomplete assistant/tool messages in history.
 	previousMessages := append([]message(nil), a.Messages...)
 	defer func() {
-		if ctx.Err() != nil {
+		if turnErr != nil {
 			a.Messages = previousMessages
 		}
 	}()
@@ -294,9 +294,10 @@ func (a *Model) Ask(ctx context.Context, prompt string) (string, error) {
 			}
 			callsUsed++
 			var input map[string]any
-			if err = json.Unmarshal([]byte(call.Function.Arguments), &input); err != nil {
-				input = map[string]any{}
-			}
+			if err = json.Unmarshal([]byte(call.Function.Arguments), &input); err != nil || input == nil {
+                a.Messages = append(a.Messages, message{Role: "tool", ToolCallID: call.ID, Content: core.JSON(map[string]string{"error": "tool arguments must be a JSON object"})})
+                continue
+            }
 			commandID, known := toolIDs[call.Function.Name]
 			if !known {
 				a.Messages = append(a.Messages, message{Role: "tool", ToolCallID: call.ID, Content: core.JSON(map[string]string{"error": "unknown agent tool"})})
