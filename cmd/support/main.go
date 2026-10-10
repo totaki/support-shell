@@ -17,6 +17,7 @@ func main() {
 	command := flag.String("command", "", "execute one command and exit")
 	flag.Parse()
 	r := core.NewRegistry()
+	configureToolPolicy(r)
 	modules.RegisterDemo(r)
 	modules.RegisterKubernetes(r)
 	manager := pluginmanager.New()
