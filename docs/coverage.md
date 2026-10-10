@@ -22,3 +22,5 @@ Go unit/integration coverage is collected with `go test -race -v -covermode=atom
 - `cmd/support/tool_policy_test.go`: YAML policy parsing and environment deny overrides.
 
 Run `go test ./internal/core ./internal/mcp ./cmd/support` for a focused check. The aggregate Coveralls percentage includes other Go packages; it is not an indication of WASM/Rust coverage or real Kubernetes behavior. No minimum threshold is enforced until we have a confirmed baseline.
+
+- `internal/agent/runtime_boundaries_test.go`: per-turn tool-call budget, suppression of advertised tools after the budget is spent, rollback of conversation history on cancellation, and rejecting schema-invalid model tool calls before handler execution.
