@@ -25,12 +25,17 @@ jobs:
         run: go mod edit -json >/dev/null
       - name: Go tests with race detection and coverage
         run: |
-          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+          set -o pipefail
+          go test -race -v -covermode=atomic -coverprofile=coverage.out ./... | tee go-tests.log
           go tool cover -func=coverage.out | tee coverage.txt
       - name: Coverage summary
         if: always()
         run: |
-          echo "## Go coverage (unit + integration)" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Go tests and coverage" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f go-tests.log ]; then
+            echo "Passed test cases: $(grep -c -- '--- PASS:' go-tests.log || true)" >> "$GITHUB_STEP_SUMMARY"
+            echo "Failed test cases: $(grep -c -- '--- FAIL:' go-tests.log || true)" >> "$GITHUB_STEP_SUMMARY"
+          fi
           if [ -s coverage.txt ]; then
             echo '```text' >> "$GITHUB_STEP_SUMMARY"
             grep -E 'total:|\.go:' coverage.txt | tail -n 25 >> "$GITHUB_STEP_SUMMARY"
@@ -45,6 +50,7 @@ jobs:
           path: |
             coverage.out
             coverage.txt
+            go-tests.log
           if-no-files-found: ignore
       - name: Vet
         run: go vet ./...
