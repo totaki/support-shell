@@ -6,6 +6,7 @@ use support_plugin_sdk::{Command, Example, Manifest, Request};
 pub fn describe(_: String) -> FnResult<String> {
     let mut manifest = Manifest::new("fixture", "0.1.0", &[], vec![
         Command::read("fixture.echo", "fixture echo", "Echo a message for integration tests", &["message"]),
+        Command::read("fixture.invalid", "fixture invalid", "Produce invalid JSON for host recovery tests", &[]),
     ]);
     manifest.description = "Deterministic WASM smoke-test tool without Kubernetes access".into();
     manifest.title = "E2E Fixture".into();
@@ -25,6 +26,9 @@ pub fn describe(_: String) -> FnResult<String> {
 #[plugin_fn]
 pub fn execute(input: String) -> FnResult<String> {
     let req = Request::parse(&input)?;
+    if req.command == "fixture.invalid" {
+        return Ok("not-json".into());
+    }
     if req.command != "fixture.echo" {
         return Ok(json!({"error":"unknown operation"}).to_string());
     }
