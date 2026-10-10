@@ -15,11 +15,15 @@ type ToolPolicy struct {
  Deny map[Surface]map[string]bool
 }
 
-func (p ToolPolicy) Allowed(surface Surface, c Command) bool {
- if surface != SurfaceCLI && surface != SurfaceAgent && surface != SurfaceMCP {return false}
- if surface != SurfaceCLI && c.Risk != "read" {return false}
- if surface != SurfaceCLI && len(c.ID)>=13 && c.ID[:13]=="demo.cluster." {return false}
- return !p.Deny[surface][c.ID]
+func (p ToolPolicy) Allowed(surface Surface, c Command) bool { return p.Reason(surface,c)=="" }
+
+// Reason describes why a tool is unavailable on an interface.
+func (p ToolPolicy) Reason(surface Surface, c Command) string {
+ if surface != SurfaceCLI && surface != SurfaceAgent && surface != SurfaceMCP {return "unknown interface"}
+ if surface != SurfaceCLI && c.Risk != "read" {return "non-read command"}
+ if surface != SurfaceCLI && len(c.ID)>=13 && c.ID[:13]=="demo.cluster." {return "demo cluster tool"}
+ if p.Deny[surface][c.ID] {return "denied by policy"}
+ return ""
 }
 func (r *Registry) SetToolPolicy(p ToolPolicy) { r.policy=p }
 func (r *Registry) Allowed(surface Surface, c Command) bool {return r.policy.Allowed(surface,c)}
@@ -38,3 +42,5 @@ func (r *Registry) ExecuteFor(ctx context.Context, surface Surface, id string, i
  }
  return nil,fmt.Errorf("unknown command ID %s",id)
 }
+
+func (r *Registry) AccessReason(surface Surface, c Command) string { return r.policy.Reason(surface,c) }
