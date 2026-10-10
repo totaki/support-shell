@@ -17,6 +17,10 @@ messages = [
      "params": {"name": "fixture.echo", "arguments": {"message": "hello"}}},
     {"jsonrpc": "2.0", "id": 4, "method": "tools/call",
      "params": {"name": "fixture.echo", "arguments": {"message": 42}}},
+    {"jsonrpc": "2.0", "id": 5, "method": "tools/call",
+     "params": {"name": "fixture.invalid", "arguments": {}}},
+    {"jsonrpc": "2.0", "id": 6, "method": "tools/call",
+     "params": {"name": "fixture.echo", "arguments": {"message": "recovered"}}},
 ]
 proc = subprocess.run(
     [binary, "mcp", "serve"],
@@ -27,7 +31,7 @@ proc = subprocess.run(
 if proc.returncode:
     sys.exit(f"MCP process exited {proc.returncode}: {proc.stderr}")
 replies = [json.loads(line) for line in proc.stdout.splitlines()]
-assert len(replies) == 4, f"expected 4 replies; got {replies}"
+assert len(replies) == 6, f"expected 6 replies; got {replies}"
 assert replies[0]["result"]["serverInfo"]["name"] == "support-shell"
 listed = replies[1]["result"]["tools"]
 tool = next((t for t in listed if t["name"] == "fixture.echo"), None)
@@ -36,4 +40,6 @@ assert tool["inputSchema"]["required"] == ["message"], tool
 result = replies[2]["result"]
 assert result["structuredContent"]["echo"] == "hello", result
 assert replies[3]["result"]["isError"] is True, replies[3]
-print("PASS: real WASM via MCP tools/list, tools/call, input validation")
+assert replies[4]["result"]["isError"] is True, replies[4]
+assert replies[5]["result"]["structuredContent"]["echo"] == "recovered", replies[5]
+print("PASS: real WASM via MCP, input validation, malformed output and recovery")
