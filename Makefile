@@ -23,3 +23,10 @@ run-plugin:
 
 test-extism:
 	go test -tags extism ./...
+
+.PHONY: test-e2e
+
+test-e2e:
+	cargo build --manifest-path plugins/fixture/Cargo.toml --target wasm32-wasip1 --release
+	go build -tags extism -o support ./cmd/support
+	python3 scripts/e2e_mcp.py
