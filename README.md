@@ -1,6 +1,8 @@
 # Support Shell — runnable reference implementation
 
 [![CI](https://github.com/totaki/support-shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/totaki/support-shell/actions/workflows/ci.yml)
+**MVP release baseline:** [v0.1.0 changelog](CHANGELOG.md) · [Release instructions](docs/releases.md). The Git tag and release must be published separately.
+
 
 [![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
