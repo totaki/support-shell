@@ -10,7 +10,7 @@ import (
 // completions combines Shell built-ins and the shared command Registry.
 // All returned candidates are complete input lines, not only suffixes.
 func (s *Shell) completions(ctx context.Context, prefix string) []string {
- builtins:=[]string{"help","commands","history","report","report save","agent reset","set format table","set format json","exit","quit"}
+ builtins:=[]string{"help","commands","tools permissions","history","report","report save","agent reset","set format table","set format json","exit","quit"}
  candidates:=append([]string{},builtins...)
  for _,cmd:=range s.Registry.ListFor(core.SurfaceCLI){candidates=append(candidates,cmd.Path)}
  if strings.HasPrefix(prefix,"help ") {
