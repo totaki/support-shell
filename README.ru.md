@@ -113,3 +113,9 @@ Plugin Runtime теперь проверяет уникальность ID ко�
 Команда `make test-e2e` собирает тестовый WASM-плагин `fixture`, запускает реальный MCP Server и проверяет `tools/list`, `tools/call` и валидацию аргументов. Тест не требует кластера Kubernetes. Код сценария: [scripts/e2e_mcp.py](scripts/e2e_mcp.py).
 
 Tool permissions: SUPPORT_DENY_CLI, SUPPORT_DENY_AGENT and SUPPORT_DENY_MCP accept comma-separated command IDs. MCP and AI remain read-only. See docs/architecture.md.
+
+### YAML-политики и прозрачность тестов
+
+Можно указать `SUPPORT_POLICY_FILE=examples/tool-policy.yaml`. Формат: `deny.cli`, `deny.agent`, `deny.mcp` со списками ID команд. Переменные `SUPPORT_DENY_*` добавляют запреты поверх файла. Команда `tools permissions` показывает доступность команд и причины блокировки для всех интерфейсов.
+
+GitHub Actions теперь формирует отчёт Go coverage в Summary workflow и сохраняет `coverage.out`/`coverage.txt` в артефакте `go-coverage`. Rust SDK, сетевые тесты и WASM→MCP E2E помечаются отдельными шагами CI. Coverage относится к Go-тестам; он не является покрытием Rust или полного Kubernetes E2E.
