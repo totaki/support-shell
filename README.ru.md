@@ -107,3 +107,7 @@ Support Shell теперь умеет работать как локальный
 Подсказки Tab работают также для встроенных команд: `help <команда>`, `set format table|json`, `plugins info <имя>`, `report save`, `agent reset` и Registry-команд. Динамическое дополнение аргументов зависит от наличия `Completer` у конкретной команды.
 
 Plugin Runtime теперь проверяет уникальность ID команд в Registry и базовые JSON Schema аргументов перед выполнением — одинаково для CLI, AI и MCP. Поддерживаемые ограничения описаны в [docs/plugins.md](docs/plugins.md); полная JSON Schema пока не реализована.
+
+### Сквозная проверка WASM + MCP
+
+Команда `make test-e2e` собирает тестовый WASM-плагин `fixture`, запускает реальный MCP Server и проверяет `tools/list`, `tools/call` и валидацию аргументов. Тест не требует кластера Kubernetes. Код сценария: [scripts/e2e_mcp.py](scripts/e2e_mcp.py).
