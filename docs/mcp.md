@@ -50,3 +50,7 @@ The protocol implementation is intentionally compact; protocol conformance and i
 ## Deterministic end-to-end smoke test
 
 From the repository root, run `make test-e2e`. It builds an independent `plugins/fixture` WASM module (no Kubernetes credentials or network access needed), builds the Extism-enabled Go host, and runs `scripts/e2e_mcp.py`. The script launches a real `support mcp serve` subprocess with `PLUGIN_PATH` pointing exclusively to this fixture, then verifies `initialize`, discovery via `tools/list`, execution via `tools/call`, and rejection of an invalid argument type. CI runs the same test. This validates the MCP → Registry → Extism WASM path, not a third-party MCP client's behavior or Host API calls to Kubernetes.
+
+## Per-interface permissions
+
+MCP exposes only read-only Registry commands (demo cluster operations are excluded). To suppress sensitive read tools, set `SUPPORT_DENY_MCP=k8s.pod.logs,k8s.events` before starting `support mcp serve`. The list uses **exact Registry command IDs**, separated by commas. Denied tools disappear from `tools/list` and are also rejected by `tools/call`. The built-in agent and CLI have separate lists: `SUPPORT_DENY_AGENT` and `SUPPORT_DENY_CLI`. Denials do not grant write access; the CLI still requires its explicit approval path for mutating operations. Restart to apply changes. Use least-privilege kubeconfig credentials regardless of this feature.
