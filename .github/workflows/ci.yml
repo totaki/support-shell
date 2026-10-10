@@ -23,8 +23,29 @@ jobs:
         run: go mod tidy
       - name: Check Go module declarations
         run: go mod edit -json >/dev/null
-      - name: Test
-        run: go test -race ./...
+      - name: Go tests with race detection and coverage
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+          go tool cover -func=coverage.out | tee coverage.txt
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## Go coverage (unit + integration)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s coverage.txt ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            grep -E 'total:|\.go:' coverage.txt | tail -n 25 >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Coverage was not generated (tests may have failed)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: go-coverage
+          path: |
+            coverage.out
+            coverage.txt
+          if-no-files-found: ignore
       - name: Vet
         run: go vet ./...
       - name: Build
@@ -49,11 +70,15 @@ jobs:
             plugins/diagnostics
             plugins/network
       - name: Test Rust SDK
-        run: cargo test --manifest-path plugins/sdk/Cargo.toml
+        run: |
+          cargo test --manifest-path plugins/sdk/Cargo.toml
+          echo "- Rust SDK tests: passed" >> "$GITHUB_STEP_SUMMARY"
       - name: Build diagnostics WASM
         run: cargo build --manifest-path plugins/diagnostics/Cargo.toml --target wasm32-wasip1 --release
       - name: Test network diagnostics
-        run: cargo test --manifest-path plugins/network/Cargo.toml --lib
+        run: |
+          cargo test --manifest-path plugins/network/Cargo.toml --lib
+          echo "- Network diagnostics tests: passed" >> "$GITHUB_STEP_SUMMARY"
       - name: Build network WASM
         run: cargo build --manifest-path plugins/network/Cargo.toml --target wasm32-wasip1 --release
       - name: Build E2E fixture
@@ -67,7 +92,9 @@ jobs:
           go mod tidy
           go build -tags extism -o support ./cmd/support
       - name: Run MCP WASM E2E
-        run: python3 scripts/e2e_mcp.py
+        run: |
+          python3 scripts/e2e_mcp.py
+          echo "- WASM → Registry → MCP end-to-end: passed" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify WASM builds
         run: |
           test -s plugins/diagnostics/target/wasm32-wasip1/release/support_diagnostics.wasm
