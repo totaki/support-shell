@@ -7,7 +7,6 @@ import (
  "encoding/json"
  "fmt"
  "io"
- "strings"
 
  "example.com/support-shell/internal/core"
 )
@@ -34,8 +33,7 @@ type Server struct { Registry *core.Registry }
 
 func (s *Server) listTools() []map[string]any {
  out:=[]map[string]any{}
- for _,c:=range s.Registry.List(){
-  if c.Risk!="read" || strings.HasPrefix(c.ID,"demo.cluster.") {continue}
+ for _,c:=range s.Registry.ListFor(core.SurfaceMCP){
   schema:=c.InputSchema
   if schema==nil {
    properties:=map[string]any{}
@@ -69,7 +67,7 @@ func (s *Server) dispatch(ctx context.Context, req request) response {
   for _,tool:=range s.listTools(){if tool["name"]==params.Name {allowed=true;break}}
   if !allowed {return fail(-32602,"unknown or unavailable tool")}
   if params.Arguments==nil {params.Arguments=map[string]any{}}
-  data,err:=s.Registry.Execute(ctx,params.Name,params.Arguments)
+  data,err:=s.Registry.ExecuteFor(ctx,core.SurfaceMCP,params.Name,params.Arguments)
   if err!=nil {answer.Result=map[string]any{"isError":true,"content":[]map[string]any{{"type":"text","text":err.Error()}}};break}
   result:=map[string]any{"content":[]map[string]any{{"type":"text","text":core.JSON(data)}}}
   if _,err:=json.Marshal(data);err==nil {result["structuredContent"]=data}
