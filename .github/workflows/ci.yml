@@ -110,6 +110,11 @@ jobs:
         run: |
           python3 scripts/e2e_mcp.py
           echo "- WASM → Registry → MCP end-to-end: passed" >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify WASM runaway guest timeout and recovery
+        timeout-minutes: 1
+        run: |
+          python3 scripts/e2e_wasm_timeout.py
+          echo "- WASM infinite-loop interruption and recovery: passed" >> "$GITHUB_STEP_SUMMARY"
       - name: Verify WASM builds
         run: |
           test -s plugins/diagnostics/target/wasm32-wasip1/release/support_diagnostics.wasm
