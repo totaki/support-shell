@@ -30,3 +30,5 @@ Run `go test ./internal/core ./internal/mcp ./cmd/support` for a focused check. 
 - `internal/agent/hardening_test.go`: model HTTP errors and malformed responses roll back unfinished conversation turns; malformed tool-call arguments never reach the handler.
 - `internal/agent/retry_test.go`: simulated model HTTP timeout after a tool call causes only the model HTTP request to retry, not a duplicate tool execution.
 - WASM host execution checks context cancellation around the plugin call and caps the returned JSON payload at 4 MiB. These guards do not yet prove that every Extism/WASI guest can be preempted immediately while it is running.
+
+- `scripts/e2e_mcp.py` also exercises a real WASM plugin that returns malformed JSON, verifies an MCP tool error, and then calls the same plugin instance again to confirm recovery. This does **not** yet constitute a verified hard-interruption test of a nonterminating WASM guest.
