@@ -111,3 +111,5 @@ Plugin Runtime теперь проверяет уникальность ID ко�
 ### Сквозная проверка WASM + MCP
 
 Команда `make test-e2e` собирает тестовый WASM-плагин `fixture`, запускает реальный MCP Server и проверяет `tools/list`, `tools/call` и валидацию аргументов. Тест не требует кластера Kubernetes. Код сценария: [scripts/e2e_mcp.py](scripts/e2e_mcp.py).
+
+Tool permissions: SUPPORT_DENY_CLI, SUPPORT_DENY_AGENT and SUPPORT_DENY_MCP accept comma-separated command IDs. MCP and AI remain read-only. See docs/architecture.md.
