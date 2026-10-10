@@ -69,3 +69,23 @@ func TestMCPUsesRegistryValidation(t *testing.T) {
  data:=valid["result"].(map[string]any)["structuredContent"].(map[string]any)
  if data["value"]!="hello"{t.Fatalf("unexpected structured result: %v",data)}
 }
+
+func TestMCPDenialNotListedOrCallable(t *testing.T) {
+ r:=core.NewRegistry()
+ invoked:=false
+ _=r.Add(core.Command{ID:"private.read",Path:"private read",Risk:"read",Handler:func(context.Context,map[string]any)(any,error){invoked=true;return "secret",nil}})
+ r.SetToolPolicy(core.ToolPolicy{Deny:map[core.Surface]map[string]bool{core.SurfaceMCP:{"private.read":true}}})
+ srv:=Server{Registry:r}
+ input:="{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}\n{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"private.read\"}}\n"
+ var out bytes.Buffer
+ if err:=srv.Serve(context.Background(),strings.NewReader(input),&out);err!=nil{t.Fatal(err)}
+ var replies []map[string]any
+ for _,line:=range strings.Split(strings.TrimSpace(out.String()),"\n"){
+  var item map[string]any
+  if err:=json.Unmarshal([]byte(line),&item);err!=nil{t.Fatal(err)}
+  replies=append(replies,item)
+ }
+ if len(replies)!=2{t.Fatalf("replies: %v",replies)}
+ if len(replies[0]["result"].(map[string]any)["tools"].([]any))!=0{t.Fatal("denied tool exposed")}
+ if replies[1]["error"]==nil||invoked{t.Fatal("denied tool executed")}
+}
