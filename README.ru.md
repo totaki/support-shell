@@ -1,5 +1,7 @@
 # Support Shell
 
+[![Go coverage](https://codecov.io/gh/totaki/support-shell/graph/badge.svg)](https://codecov.io/gh/totaki/support-shell)
+
 Интерактивная консоль поддержки на Go: команды и автодополнение, Kubernetes через локальный kubectl, AI-агент через OpenAI-compatible Chat Completions и расширения Extism/WASM.
 
 **Состояние:** PoC. Изменяющие операции через обычный Executor запрещены. Результаты Kubernetes-инструментов отправляются выбранному LLM-провайдеру — не используйте подключение с доступом к секретам, если не допускается передача этих данных.
