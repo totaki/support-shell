@@ -13,6 +13,9 @@ jobs:
   go:
     name: Go tests and vet
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -28,6 +31,15 @@ jobs:
           set -o pipefail
           go test -race -v -covermode=atomic -coverprofile=coverage.out ./... | tee go-tests.log
           go tool cover -func=coverage.out | tee coverage.txt
+      - name: Upload Go coverage to Codecov
+        if: success() && github.event_name != 'pull_request'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          flags: go
+          name: go-unit-integration
+          use_oidc: true
+          fail_ci_if_error: false
       - name: Coverage summary
         if: always()
         run: |
