@@ -1,14 +1,13 @@
 # Coverage reports
 
-Go tests run in GitHub Actions with race detection and produce `coverage.out`. After successful tests on `main`, `codecov/codecov-action@v5` uploads that file to [Codecov](https://codecov.io/gh/totaki/support-shell) via GitHub Actions OIDC (`id-token: write` on the Go job). No GitHub `CODECOV_TOKEN` secret is required for this method.
+Go unit and integration tests run in GitHub Actions with race detection and produce `coverage.out`. On successful `main` builds, the official `coverallsapp/github-action@v2` uploads the Go profile to [Coveralls](https://coveralls.io/github/totaki/support-shell) using the built-in GitHub Actions token. No manually created coverage secret or OIDC configuration is needed.
 
-## One-time setup
+## Setup
 
-1. Sign in to [Codecov](https://codecov.io) using GitHub and authorize access to the public repository `totaki/support-shell`.
-2. Enable the repository in Codecov if it is not enabled already.
-3. Trigger the `CI` workflow on `main` and inspect the **Upload Go coverage to Codecov** step. If authentication or upload fails, check the repository's Codecov configuration and OIDC support.
-4. Open the Codecov page to see history and individual file coverage. The badge in `README.md` and `README.ru.md` resolves after Codecov receives coverage for the repository.
+1. Trigger the project's CI workflow on `main`. The Coveralls GitHub Action can create the repository entry on first successful upload.
+2. Open [Coveralls for support-shell](https://coveralls.io/github/totaki/support-shell) to see coverage history, per-file information, and the README badge.
+3. If the upload reports a repository permissions/authentication error, sign into Coveralls with GitHub and grant access to the public repository, then rerun CI.
 
-Uploads are limited to successful non-PR runs, so forked pull requests do not require upload credentials. The upload is currently **non-blocking** (`fail_ci_if_error: false`), so problems with an external service do not make passing tests red. GitHub Actions still publishes a Go test log and `coverage.out` as build artifacts.
+Only successful non-PR builds upload coverage. The Go coverage artifact (`coverage.out`, `coverage.txt`, `go-tests.log`) and workflow summary remain available in GitHub Actions.
 
-Coverage percentages measure **Go statements exercised by unit and integration tests**. Rust SDK tests and the compiled WASM-to-MCP E2E flow are executed in other CI steps; they are not included in this Go coverage number.
+The reported percentage covers **Go statements reached by Go tests**; it does not include Rust unit tests or compiled WASM → MCP E2E execution, which are separate CI steps.
