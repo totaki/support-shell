@@ -47,7 +47,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	}
 	if strings.HasPrefix(line, "help ") {
         name := strings.TrimSpace(strings.TrimPrefix(line, "help "))
-        for _, c := range s.Registry.List() {
+        for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
             if c.Path == name || c.ID == name {
                 fmt.Println(indentOutput(commandHelp(c)))
                 return true
@@ -61,12 +61,12 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 		return false
 	case "help":
 		fmt.Println("Built-in: help, commands, history, set format table|json, help <command>, report, report save, agent reset, exit")
-		for _, c := range s.Registry.List() {
+		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Printf("  %-24s %s\n", c.Path, c.Description)
 		}
 		return true
 	case "commands":
-		for _, c := range s.Registry.List() {
+		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Println(c.Path)
 		}
 		return true
