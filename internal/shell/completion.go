@@ -2,6 +2,7 @@ package shell
 
 import (
  "context"
+ "example.com/support-shell/internal/core"
  "sort"
  "strings"
 )
@@ -11,7 +12,7 @@ import (
 func (s *Shell) completions(ctx context.Context, prefix string) []string {
  builtins:=[]string{"help","commands","history","report","report save","agent reset","set format table","set format json","exit","quit"}
  candidates:=append([]string{},builtins...)
- for _,cmd:=range s.Registry.List(){candidates=append(candidates,cmd.Path)}
+ for _,cmd:=range s.Registry.ListFor(core.SurfaceCLI){candidates=append(candidates,cmd.Path)}
  if strings.HasPrefix(prefix,"help ") {
   candidates=nil
   for _,cmd:=range s.Registry.List(){
