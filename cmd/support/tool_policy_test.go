@@ -33,3 +33,13 @@ func TestConfigureToolPolicyRejectsBadYAML(t *testing.T) {
  t.Setenv("SUPPORT_POLICY_FILE",path)
  if err:=configureToolPolicy(core.NewRegistry());err==nil{t.Fatal("unknown surface accepted")}
 }
+
+func TestConfigureToolPolicyRejectsUnknownFieldAndMissingFile(t *testing.T) {
+ path:=filepath.Join(t.TempDir(),"policy.yaml")
+ t.Setenv("SUPPORT_POLICY_FILE",path)
+ if err:=configureToolPolicy(core.NewRegistry());err==nil{t.Fatal("missing policy accepted")}
+ if err:=os.WriteFile(path,[]byte("unsupported: true\n"),0600);err!=nil{t.Fatal(err)}
+ if err:=configureToolPolicy(core.NewRegistry());err==nil{t.Fatal("unknown YAML key accepted")}
+ if err:=os.WriteFile(path,[]byte("deny:\n  mcp:\n    - ''\n"),0600);err!=nil{t.Fatal(err)}
+ if err:=configureToolPolicy(core.NewRegistry());err==nil{t.Fatal("empty command ID accepted")}
+}
