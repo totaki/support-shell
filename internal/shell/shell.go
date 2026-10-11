@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"example.com/support-shell/internal/core"
+	"example.com/support-shell/internal/provider"
 	"fmt"
 	"io"
 	"os"
@@ -23,6 +24,9 @@ type Agent interface {
 }
 type Shell struct {
 	Registry       *core.Registry
+	Providers      *provider.Registry
+	Connections    *provider.Session
+	connectionsInitialized bool
 	Agent          Agent
 	History        []string
 	HistoryPath    string
@@ -32,13 +36,18 @@ type Shell struct {
 }
 
 func (s *Shell) Handle(ctx context.Context, line string) bool {
+	ctx=s.connectionContext(ctx)
 	line = strings.TrimSpace(line)
 	if line == "" {
 		return true
 	}
 	s.History = append(s.History, line)
 	s.SaveHistory()
-	if strings.HasPrefix(line, "set format ") {
+	if strings.HasPrefix(line,"connections use "){
+  s.queueConnection(ctx,strings.TrimSpace(strings.TrimPrefix(line,"connections use ")))
+  return true
+ }
+ if strings.HasPrefix(line, "set format ") {
 		mode := strings.TrimSpace(strings.TrimPrefix(line, "set format "))
 		if mode != "table" && mode != "json" { fmt.Println("Usage: set format table|json"); return true }
 		s.OutputFormat = mode
@@ -60,7 +69,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	case "quit", "exit":
 		return false
 	case "help":
-		fmt.Println("Built-in: help, commands, tools permissions, history, set format table|json, help <command>, report, report save, agent reset, exit")
+		fmt.Println("Built-in: help, commands, connections, connections use <provider>/<name>, tools permissions, history, set format table|json, help <command>, report, report save, agent reset, exit")
 		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Printf("  %-24s %s\n", c.Path, c.Description)
 		}
@@ -72,6 +81,12 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
             fmt.Printf("%-29s %-12s %-12s %s\n",c.ID,state(core.SurfaceCLI),state(core.SurfaceAgent),state(core.SurfaceMCP))
         }
         return true
+\tcase "connections":
+  s.listConnections(ctx)
+  return true
+ case "connections current":
+  if s.CurrentContext==""{fmt.Println("No selected connection")}else{fmt.Println(s.CurrentContext)}
+  return true
 	case "commands":
 		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Println(c.Path)
@@ -110,28 +125,6 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	}
 	if c, args, ok := s.Registry.Resolve(line); ok {
 		if !s.Registry.Allowed(core.SurfaceCLI, c) { fmt.Fprintln(os.Stderr, "error: tool not permitted in CLI"); return true }
-		if c.ID == "provider.kubernetes.context.use" {
-			input, err := core.ParseInput(c, args)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "error:", err)
-				return true
-			}
-			target, _ := input["name"].(string)
-			if target == "" {
-				fmt.Fprintln(os.Stderr, "error: context name required")
-				return true
-			}
-			current, err := s.Registry.Execute(ctx, "provider.kubernetes.contexts", nil)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "error:", err)
-				return true
-			}
-			// Validation of existence happens only on confirmed execution.
-			fmt.Println(indentOutput(s.renderResult("provider.kubernetes.contexts", current)))
-			fmt.Printf("\nSwitch Kubernetes context:\n  Current: %s\n  Target:  %s\n", currentContextName(current), target)
-			s.PendingContext = target
-			return true
-		}
 
 		input, err := core.ParseInput(c, args)
 		if err == nil {
@@ -249,14 +242,7 @@ func (s *Shell) prompt(color bool) string {
 	return name + " ❯ "
 }
 
-func (s *Shell) refreshContext(ctx context.Context) {
-	v, err := s.Registry.Execute(ctx, "provider.kubernetes.contexts", nil)
-	if err != nil {
-		s.CurrentContext = ""
-		return
-	}
-	s.CurrentContext = currentContextName(v)
-}
+func (s *Shell) refreshContext(ctx context.Context) { _ = s.connectionContext(ctx) }
 func (s *Shell) Run(ctx context.Context) {
 	fmt.Println("Support Shell — Tab completion · ↑↓ history · Ctrl+R search · help")
 	s.refreshContext(ctx)
@@ -632,22 +618,22 @@ func readConfirmation(r *bufio.Reader) (string, error) {
 }
 
 func (s *Shell) applyContextDecision(ctx context.Context, decision string) {
-	target := s.PendingContext
-	s.PendingContext = ""
-	if target == "" {
-		return
-	}
-	if strings.TrimSpace(decision) != "y" && strings.TrimSpace(decision) != "Y" {
-		fmt.Println("Context switch cancelled")
-		return
-	}
-	result, err := s.Registry.ExecuteApproved(ctx, "provider.kubernetes.context.use", map[string]any{"name": target})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
-		return
-	}
-	fmt.Println(indentOutput(s.renderResult("provider.kubernetes.context.use", result)))
-	s.refreshContext(ctx)
+ target:=s.PendingContext
+ s.PendingContext=""
+ if target==""{return}
+ if strings.TrimSpace(decision)!="y" && strings.TrimSpace(decision)!="Y"{
+  fmt.Println("Connection selection cancelled")
+  return
+ }
+ if s.Providers==nil||s.Connections==nil{fmt.Fprintln(os.Stderr,"connections unavailable");return}
+ providerID,id,ok:=strings.Cut(target,"/")
+ if !ok{fmt.Fprintln(os.Stderr,"invalid connection",target);return}
+ if err:=s.Connections.Select(ctx,s.Providers,providerID,id);err!=nil{
+  fmt.Fprintln(os.Stderr,"connections:",err)
+  return
+ }
+ s.syncConnectionLabel()
+ fmt.Println("Selected connection:",s.CurrentContext)
 }
 
 func currentContextName(value any) string {
