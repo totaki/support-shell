@@ -81,7 +81,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
             fmt.Printf("%-29s %-12s %-12s %s\n",c.ID,state(core.SurfaceCLI),state(core.SurfaceAgent),state(core.SurfaceMCP))
         }
         return true
-\tcase "connections":
+	case "connections":
   s.listConnections(ctx)
   return true
  case "connections current":
