@@ -56,7 +56,7 @@ func renderCommand(id string, value any) string {
 		return formatResult(value)
 	}
 	switch id {
-	case "k8s.nodes":
+	case "provider.kubernetes.nodes":
 		headers = []string{"NAME", "STATUS", "ROLES", "VERSION", "AGE"}
 		for _, item := range items {
 			labels, _ := field(item, "metadata", "labels").(map[string]any)
@@ -87,12 +87,12 @@ func renderCommand(id string, value any) string {
 			}
 			rows = append(rows, []string{str(field(item, "metadata", "name")), status, strings.Join(roles, ","), str(field(item, "status", "nodeInfo", "kubeletVersion")), age(field(item, "metadata", "creationTimestamp"))})
 		}
-	case "k8s.namespaces":
+	case "provider.kubernetes.namespaces":
 		headers = []string{"NAME", "STATUS", "AGE"}
 		for _, item := range items {
 			rows = append(rows, []string{str(field(item, "metadata", "name")), str(field(item, "status", "phase")), age(field(item, "metadata", "creationTimestamp"))})
 		}
-	case "k8s.pods":
+	case "provider.kubernetes.pods":
 		headers = []string{"NAME", "READY", "STATUS", "RESTARTS", "AGE"}
 		for _, item := range items {
 			statuses, _ := field(item, "status", "containerStatuses").([]any)
@@ -112,7 +112,7 @@ func renderCommand(id string, value any) string {
 			}
 			rows = append(rows, []string{str(field(item, "metadata", "name")), fmt.Sprintf("%d/%d", ready, len(statuses)), reason, fmt.Sprint(restarts), age(field(item, "metadata", "creationTimestamp"))})
 		}
-	case "k8s.events":
+	case "provider.kubernetes.events":
 		headers = []string{"TYPE", "REASON", "OBJECT", "MESSAGE"}
 		for _, item := range items {
 			rows = append(rows, []string{str(field(item, "type")), str(field(item, "reason")), str(field(item, "involvedObject", "name")), str(field(item, "message"))})
