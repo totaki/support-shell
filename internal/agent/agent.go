@@ -166,7 +166,7 @@ func (a *Model) Ask(ctx context.Context, prompt string) (answer string, turnErr 
 	contextLabel := a.LastContext
 	a.mu.Unlock()
 	if contextLabel != "" {
-		prompt = "Selected Kubernetes context: " + contextLabel + ". Confirm actual scope in results.\n" + prompt
+		prompt = "Selected infrastructure connections: " + contextLabel + ". Confirm actual scope in results.\n" + prompt
 	}
 	a.Messages = append(a.Messages, message{Role: "user", Content: prompt})
 	if len(a.Messages) > 36 {
