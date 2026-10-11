@@ -7,13 +7,18 @@ The REPL first tries to resolve input as a known command. Unmatched input is sen
 - `Tab`: longest common prefix, followed by interactive candidates.
 - `↑/↓`: history; `←/→`: cursor navigation.
 - `Ctrl+R`: history search; `Ctrl+A/E`: beginning/end.
-- `help`, `commands`, `history`, `exit`.
+- `help`, `commands`, `ctx`, `history`, `exit`.
 - `NO_COLOR=1` disables ANSI styling.
+
+## Prompt and connections
+
+The prompt always stays `support ❯`, even with multiple provider connections. Use `ctx` to display the active selections (one short line per provider), `connections` to list all available profiles, and `connections use <provider>/<name>` to change one. Tab completion navigation stays within a temporary list and must not overwrite or duplicate the input line.
 
 ## Kubernetes
 
 ```text
 k8s contexts
+ctx
 connections
 connections current
 connections use kubernetes/<context>
