@@ -21,7 +21,6 @@ func (p ToolPolicy) Allowed(surface Surface, c Command) bool { return p.Reason(s
 func (p ToolPolicy) Reason(surface Surface, c Command) string {
  if surface != SurfaceCLI && surface != SurfaceAgent && surface != SurfaceMCP {return "unknown interface"}
  if surface != SurfaceCLI && c.Risk != "read" {return "non-read command"}
- if surface != SurfaceCLI && len(c.ID)>=13 && c.ID[:13]=="demo.cluster." {return "demo cluster tool"}
  if p.Deny[surface][c.ID] {return "denied by policy"}
  return ""
 }
