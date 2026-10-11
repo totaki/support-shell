@@ -139,7 +139,10 @@ type kubeView struct {
 }
 
 func withKubeContext(ctx context.Context, argv []string)([]string,error){
- if len(argv)>0 && argv[0]=="config" {return argv,nil}
+ if len(argv)>0 && argv[0]=="config" {
+  if len(argv)==3 && argv[1]=="view" && argv[2]=="-o=json"{return argv,nil}
+  return nil,fmt.Errorf("kubeconfig mutation is forbidden")
+ }
  selected,ok:=provider.ConnectionFromContext(ctx,"kubernetes")
  if !ok {return nil,fmt.Errorf("no active Kubernetes connection; choose one with connections use kubernetes/<name>")}
  return append([]string{"--context",selected},argv...),nil
@@ -181,7 +184,7 @@ func contextTable(ctx context.Context) (string, error) {
 	if len(v.Contexts) == 0 {
 		return "No Kubernetes contexts found", nil
 	}
-	if selected,ok:=provider.ConnectionFromContext(ctx,"kubernetes");ok{v.Current=selected}
+	if selected,ok:=provider.ConnectionFromContext(ctx,"kubernetes");ok{v.Current=selected}else{v.Current=""}
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "CURRENT\tNAME\tCLUSTER\tNAMESPACE")
