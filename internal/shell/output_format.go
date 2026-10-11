@@ -13,6 +13,8 @@ import (
 func (s *Shell) renderResult(id string, value any) string {
  if s.OutputFormat == "json" { return core.JSON(value) }
  switch id {
+ case "provider.openstack.servers","provider.openstack.networks","provider.openstack.subnets","provider.openstack.routers","provider.openstack.ports","provider.openstack.volumes":
+  return renderOpenStackList(id,value)
  case "plugins.list":
   if data,ok:=value.(map[string]any);ok {
    if raw,ok:=data["plugins"];ok {
@@ -103,4 +105,48 @@ func renderNetworkHealth(value any) string {
  }
  if len(rows)==0{return intro+"\nNo findings"}
  return intro+"\n"+tabulate([]string{"SEVERITY","NODE","CODE","MESSAGE"},rows)
+}
+
+func renderOpenStackList(id string,value any)string{
+ items,ok:=value.([]any)
+ if !ok{return formatResult(value)}
+ if len(items)==0{return "No resources found"}
+ preferred:=map[string][]string{
+  "provider.openstack.servers":{"ID","Name","Status","Networks"},
+  "provider.openstack.networks":{"ID","Name","Subnets"},
+  "provider.openstack.subnets":{"ID","Name","Network","Subnet"},
+  "provider.openstack.routers":{"ID","Name","Status","External Gateway"},
+  "provider.openstack.ports":{"ID","Name","Network","Fixed IP Addresses"},
+  "provider.openstack.volumes":{"ID","Name","Status","Size","Attached to"},
+ }
+ // The OpenStack client can vary its columns by cloud/plugin version.
+ columns:=[]string{}
+ for _,key:=range preferred[id]{
+  found:=false
+  for _,v:=range items{
+   item,ok:=v.(map[string]any)
+   if !ok{continue}
+   for existing:=range item{if strings.EqualFold(existing,key){found=true;break}}
+  }
+  if found{columns=append(columns,key)}
+ }
+ if len(columns)==0{return formatResult(value)}
+ rows:=make([][]string,0,len(items))
+ for _,v:=range items{
+  item,ok:=v.(map[string]any)
+  if !ok{return formatResult(value)}
+  row:=make([]string,0,len(columns))
+  for _,column:=range columns{
+   var cell any
+   for k,v:=range item{if strings.EqualFold(k,column){cell=v;break}}
+   switch cell.(type){
+   case map[string]any,[]any:
+    row=append(row,core.JSON(cell))
+   default:
+    row=append(row,displayValue(cell))
+   }
+  }
+  rows=append(rows,row)
+ }
+ return tabulate(columns,rows)
 }
