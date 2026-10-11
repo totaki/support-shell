@@ -8,6 +8,10 @@ import (
  "example.com/support-shell/internal/provider"
 )
 
+type connectionTestAgent struct{ resets int }
+func(a *connectionTestAgent) Reset(){a.resets++}
+func(a *connectionTestAgent) Ask(context.Context,string)(string,error){return "",nil}
+
 func TestConnectionSelectionConfirmation(t *testing.T) {
  providers:=provider.NewRegistry()
  catalog:=provider.NewCatalog("kubernetes")
@@ -25,10 +29,14 @@ func TestConnectionSelectionConfirmation(t *testing.T) {
   t.Run(tc.answer,func(t *testing.T){
    session:=provider.NewSession()
    if err:=session.SelectDefaults(context.Background(),providers);err!=nil{t.Fatal(err)}
-   sh:=&Shell{Registry:core.NewRegistry(),Providers:providers,Connections:session,PendingContext:"kubernetes/prod"}
+   agent:=&connectionTestAgent{}
+   sh:=&Shell{Registry:core.NewRegistry(),Providers:providers,Connections:session,Agent:agent,PendingContext:"kubernetes/prod"}
    sh.applyContextDecision(context.Background(),tc.answer)
    if got:=session.Current("kubernetes");got!=tc.want{t.Fatalf("answer=%q current=%q want=%q",tc.answer,got,tc.want)}
    if sh.PendingContext!=""{t.Fatalf("pending not cleared: %q",sh.PendingContext)}
+   wantResets:=0
+   if tc.want=="prod"{wantResets=1}
+   if agent.resets!=wantResets{t.Fatalf("reset count=%d want=%d",agent.resets,wantResets)}
   })
  }
 }
