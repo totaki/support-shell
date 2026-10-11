@@ -14,7 +14,7 @@ fn call(id: &str, input: Value) -> FnResult<Value> {
 #[plugin_fn]
 pub fn describe(_: String) -> FnResult<String> {
     Ok(serde_json::to_string(&{ let mut manifest = Manifest::new("diagnostics", "0.1.0",
-        &["k8s.pods", "k8s.events"],
+        &["provider.kubernetes.pods", "provider.kubernetes.events"],
         vec![Command::read("diagnostics.k8s.inspect", "diagnose k8s",
             "Inspect Kubernetes pods and events", &["namespace"])]);
         manifest.title = "Kubernetes Workload Diagnostics".into();
@@ -30,8 +30,8 @@ pub fn execute(input: String) -> FnResult<String> {
     let req = Request::parse(&input)?;
     if req.command != "diagnostics.k8s.inspect" { return Ok(json!({"error":"unknown operation"}).to_string()); }
     let ns = req.input.get("namespace").and_then(Value::as_str).filter(|s| !s.is_empty()).unwrap_or("default");
-    let pods = call("k8s.pods", json!({"namespace": ns}))?;
-    let events = call("k8s.events", json!({"namespace": ns}))?;
+    let pods = call("provider.kubernetes.pods", json!({"namespace": ns}))?;
+    let events = call("provider.kubernetes.events", json!({"namespace": ns}))?;
     let problematic_pods: Vec<Value> = pods.get("items").and_then(Value::as_array).into_iter().flatten()
         .filter_map(|pod| {
             let name = pod.pointer("/metadata/name").and_then(Value::as_str).unwrap_or("unknown");
@@ -49,7 +49,7 @@ pub fn execute(input: String) -> FnResult<String> {
         .map(|e| json!({"reason":e.get("reason"),"message":e.get("message"),"object":e.pointer("/involvedObject/name")}))
         .take(30).collect();
     Ok(json!({"namespace":ns,
-      "provenance":{"source":"kubectl", "operations":["k8s.pods", "k8s.events"], "independent_sources":false},
+      "provenance":{"source":"kubectl", "operations":["provider.kubernetes.pods", "provider.kubernetes.events"], "independent_sources":false},
       "pod_count": pods.get("items").and_then(Value::as_array).map(|a|a.len()).unwrap_or(0),
       "problematic_pods":problematic_pods,"warning_events":warnings,
       "errors": ([pods.get("error"), events.get("error")].into_iter().flatten().collect::<Vec<_>>())
