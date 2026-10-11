@@ -46,3 +46,5 @@ Extism go-sdk v1.7.1 enables wazero `WithCloseOnContextDone(true)` only when `ex
 ## Interactive terminal E2E
 
 `scripts/e2e_pty.py` uses the Python standard-library `pty` module on Linux to test the built CLI as a real terminal. It covers Tab completion, Up-arrow history, Ctrl+R reverse search, Ctrl+C draft cancellation, and rejecting/accepting a Kubernetes context switch. A temporary executable `kubectl` stub and isolated config directory prevent the test from touching any real Kubernetes cluster or user history. The PTY test is part of the CI WASM job after building the Extism-enabled binary.
+
+- `internal/agent/http_boundaries_test.go`: HTTP 401/502, malformed or empty model responses, pre-cancelled contexts, and a simulated post-tool model timeout followed by HTTP retry (asserting the tool handler runs exactly once).
