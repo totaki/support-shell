@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"example.com/support-shell/internal/core"
+	"example.com/support-shell/internal/provider"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,12 +34,12 @@ esac
 		"k8s pod logs platform controller-0 --ta": "k8s pod logs platform controller-0 --tail=",
 	}
 	for input, want := range checks {
-		suggestions := r.CompleteWithContext(context.Background(), input)
+		suggestions := r.CompleteWithContext(provider.WithConnection(context.Background(),"kubernetes","dev"), input)
 		if !contains(suggestions, want) {
 			t.Errorf("completion %q: %v; want %q", input, suggestions, want)
 		}
 	}
-	result, err := r.Execute(context.Background(), "provider.kubernetes.pods", map[string]any{"namespace": "platform"})
+	result, err := r.Execute(provider.WithConnection(context.Background(),"kubernetes","dev"), "provider.kubernetes.pods", map[string]any{"namespace": "platform"})
 	if err != nil {
 		t.Fatal(err)
 	}
