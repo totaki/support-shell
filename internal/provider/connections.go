@@ -39,25 +39,33 @@ type ConnectionDiscovery interface {
  Connections(context.Context)([]Connection,error)
 }
 
-func (r *Registry) Connections(ctx context.Context)([]Connection,error) {
+func (r *Registry) ConnectionsFor(ctx context.Context,providerID string)([]Connection,error){
  r.mu.RLock()
- providers:=make([]Provider,0,len(r.providers))
- for _,p:=range r.providers{providers=append(providers,p)}
+ p,exists:=r.providers[providerID]
  r.mu.RUnlock()
- result:=[]Connection{}
- for _,p:=range providers{
-  discover,ok:=p.(ConnectionDiscovery)
-  if !ok{continue}
-  entries,err:=discover.Connections(ctx)
-  if err!=nil{return nil,fmt.Errorf("discover %s connections: %w",p.ID(),err)}
-  for _,c:=range entries{
-   if c.Provider!=p.ID() || c.ID=="" || strings.Contains(c.ID,"/") || c.Target=="" {
-    return nil,fmt.Errorf("invalid connection from provider %s",p.ID())
-   }
-   result=append(result,c)
+ if !exists{return nil,fmt.Errorf("unknown provider %s",providerID)}
+ discover,ok:=p.(ConnectionDiscovery)
+ if !ok{return []Connection{},nil}
+ entries,err:=discover.Connections(ctx)
+ if err!=nil{return nil,fmt.Errorf("discover %s connections: %w",providerID,err)}
+ seen:=map[string]bool{}
+ for _,c:=range entries {
+  if c.Provider!=providerID || strings.TrimSpace(c.ID)=="" || strings.TrimSpace(c.Target)==""{
+   return nil,fmt.Errorf("invalid connection from provider %s",providerID)
   }
+  if seen[c.ID]{return nil,fmt.Errorf("duplicate connection %s/%s",providerID,c.ID)}
+  seen[c.ID]=true
  }
- sort.Slice(result,func(i,j int)bool{return result[i].QualifiedID()<result[j].QualifiedID()})
+ sort.Slice(entries,func(i,j int)bool{return entries[i].QualifiedID()<entries[j].QualifiedID()})
+ return entries,nil
+}
+func (r *Registry) Connections(ctx context.Context)([]Connection,error) {
+ result:=[]Connection{}
+ for _,id:=range r.IDs(){
+  entries,err:=r.ConnectionsFor(ctx,id)
+  if err!=nil{return nil,err}
+  result=append(result,entries...)
+ }
  return result,nil
 }
 
@@ -88,7 +96,7 @@ func(s *Session) Bind(ctx context.Context)context.Context{
 }
 func(s *Session) Select(ctx context.Context,r *Registry,providerID,connectionID string)error{
  if providerID=="" || connectionID==""{return errors.New("provider and connection are required")}
- connections,err:=r.Connections(ctx);if err!=nil{return err}
+ connections,err:=r.ConnectionsFor(ctx,providerID);if err!=nil{return err}
  for _,c:=range connections {
   if c.Provider==providerID && c.ID==connectionID {
    s.mu.Lock()
@@ -101,14 +109,18 @@ func(s *Session) Select(ctx context.Context,r *Registry,providerID,connectionID 
  return fmt.Errorf("unknown connection %s/%s",providerID,connectionID)
 }
 func(s *Session) SelectDefaults(ctx context.Context,r *Registry)error{
- connections,err:=r.Connections(ctx);if err!=nil{return err}
- for _,c:=range connections {
-  if c.Default && s.Current(c.Provider)=="" {
-   s.mu.Lock()
-   if s.selected==nil{s.selected=map[string]string{}}
-   s.selected[c.Provider]=c.Target
-   s.mu.Unlock()
+ var failures []error
+ for _,providerID:=range r.IDs(){
+  connections,err:=r.ConnectionsFor(ctx,providerID)
+  if err!=nil{failures=append(failures,err);continue}
+  for _,c:=range connections {
+   if c.Default && s.Current(c.Provider)=="" {
+    s.mu.Lock()
+    if s.selected==nil{s.selected=map[string]string{}}
+    s.selected[c.Provider]=c.Target
+    s.mu.Unlock()
+   }
   }
  }
- return nil
+ return errors.Join(failures...)
 }
