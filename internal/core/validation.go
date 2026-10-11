@@ -55,3 +55,6 @@ func integer(v any)bool {
  }
  return false
 }
+
+// ValidateInput exposes the supported JSON Schema subset to provider capability calls.
+func ValidateInput(schema map[string]any, input map[string]any) error { return validateInput(schema,input) }
