@@ -12,7 +12,7 @@ CLI / Agent / MCP
         |                      |
    Provider operation <--- granted read capability
         |
- Kubernetes (kubectl) / future OpenStack, PostgreSQL, Kafka drivers
+ Kubernetes (kubectl) / OpenStack (python-openstackclient) / future PostgreSQL, Kafka
 ```
 
 ## Provider responsibilities
@@ -64,9 +64,36 @@ The MCP stdio process receives one initial connection selection at startup; use
 `SUPPORT_KUBERNETES_CONNECTION` to set it. Per-client MCP sessions and persisted connection
 credentials are not yet implemented. There is no global kubeconfig mutation.
 
-OpenStack, PostgreSQL and Kafka will be separate drivers registered through the same
-provider contract. Their operations and credentials should stay provider-specific; avoid
-inventing universal CRUD semantics across fundamentally different APIs.
+OpenStack is implemented in `internal/providers/openstack` as a second built-in
+provider. It uses the `openstack` command from `python-openstackclient` and
+discovers profiles from `clouds.yaml` (via `OS_CLIENT_CONFIG_FILE` or standard
+locations). Profile contents, passwords and tokens are never returned by discovery.
+
+```text
+connections
+connections use openstack/production
+openstack servers
+openstack networks
+openstack subnets
+openstack routers
+openstack ports
+openstack volumes
+```
+
+Cloud operations are read-only and execute with `openstack --os-cloud <name> ... -f json`,
+with ambient OS_* authentication variables removed for named profiles to prevent
+cross-project credential leakage. If `OS_AUTH_URL` is set, `openstack/env` exposes
+the current OS_* environment as an explicit connection. Set `OS_CLOUD` to choose
+a default named profile, or `SUPPORT_OPENSTACK_CONNECTION` in `.env` to select
+one explicitly. Without either, multiple named clouds require manual selection.
+
+The CLI only validates and selects a cloud; it does not invoke `openstack`
+until you execute a cloud operation. Errors from the OpenStack client do not
+dump stderr, which can contain credentials. CLI access must have appropriate
+OpenStack RBAC; provider policy is not a replacement for server-side authorization.
+
+PostgreSQL and Kafka can be added as separate drivers registered through the same
+contract. Their operations and credentials should stay provider-specific.
 
 ## Tests
 
