@@ -74,3 +74,10 @@ func TestKubernetesOperationsRequireSelectedConnection(t *testing.T){
   t.Fatalf("operation was not rejected without connection: %v",err)
  }
 }
+
+func TestKubectlRejectsGlobalConfigChanges(t *testing.T){
+ ctx:=provider.WithConnection(context.Background(),"kubernetes","dev")
+ if _,err:=runKubectl(ctx,"config","use-context","prod");err==nil || !strings.Contains(err.Error(),"kubeconfig mutation"){
+  t.Fatalf("global kubeconfig update not rejected: %v",err)
+ }
+}
