@@ -13,7 +13,7 @@ func TestSurfacePolicy(t *testing.T) {
   err:=r.Add(Command{ID:id,Path:id,Risk:item.risk,Handler:func(context.Context,map[string]any)(any,error){calls++;return "ok",nil}})
   if err!=nil{t.Fatal(err)}
  }
- r.SetToolPolicy(ToolPolicy{Deny:map[Surface]map[string]bool{SurfaceMCP:{"test.read":true},SurfaceAgent:{"test.read":true}}})
+ r.SetToolPolicy(ToolPolicy{Deny:map[Surface]map[string]bool{SurfaceMCP:{"test.read":true,"demo.cluster.test":true},SurfaceAgent:{"test.read":true,"demo.cluster.test":true}}})
  for _,surface:=range []Surface{SurfaceAgent,SurfaceMCP}{
   if len(r.ListFor(surface))!=0{t.Fatalf("unexpected %s exposure",surface)}
   if _,err:=r.ExecuteFor(context.Background(),surface,"test.read",nil);err==nil{t.Fatalf("%s bypassed denial",surface)}
