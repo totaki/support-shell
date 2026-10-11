@@ -8,7 +8,7 @@ This is implemented in the **system instruction**, not by changing dispatch or a
 
 | Request | Expected behavior |
 | --- | --- |
-| "Какие ноды запущены?" | `k8s.nodes` and short summary/table |
+| "Какие ноды запущены?" | `provider.kubernetes.nodes` and short summary/table |
 | "Покажи загрузку нод" | Node metrics as needed |
 | "Проверь здоровье нод" | Relevant health indicators, investigate observed anomalies |
 | "Почему calico рестартился?" | Container status, previous logs, events, node evidence; facts separated from hypotheses |
@@ -41,4 +41,4 @@ The complete model instruction lives at `internal/agent/system_prompt.md` and is
 
 ## Проверка полноты утверждений
 
-Инструкция в `internal/agent/system_prompt.md` требует подтверждать каждое поле сводной таблицы фактическими данными для соответствующего объекта. Результат `k8s.nodes` может содержать условия для всех нод; выборочные `k8s.node.describe` не означают проверки остальных нод. Неизвестные значения нельзя заполнять предположениями. Отчёт о здоровье не должен уходить в overcommit и SPOF без запроса или наблюдаемой причины. Также модель должна оформлять маркированные списки с пробелом после дефиса; это рекомендация модели, а не детерминированная коррекция текста.
+Инструкция в `internal/agent/system_prompt.md` требует подтверждать каждое поле сводной таблицы фактическими данными для соответствующего объекта. Результат `provider.kubernetes.nodes` может содержать условия для всех нод; выборочные `provider.kubernetes.node.describe` не означают проверки остальных нод. Неизвестные значения нельзя заполнять предположениями. Отчёт о здоровье не должен уходить в overcommit и SPOF без запроса или наблюдаемой причины. Также модель должна оформлять маркированные списки с пробелом после дефиса; это рекомендация модели, а не детерминированная коррекция текста.
