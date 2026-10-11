@@ -6,11 +6,11 @@
 
 [![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
-> **Documentation:** [Русский README](README.ru.md) · [Architecture](docs/architecture.md) · [Shell commands](docs/shell.md) · [Agent behavior](docs/agent.md) · [WASM plugins](docs/plugins.md)
+> **Documentation:** [Русский README](README.ru.md) · [Architecture](docs/architecture.md) · [Providers](docs/providers.md) · [Shell commands](docs/shell.md) · [Agent behavior](docs/agent.md) · [WASM plugins](docs/plugins.md)
 >
 > This README contains historical PoC notes. The documents above describe current architecture and behavior. The agent's adaptive answer depth is prompt guidance, not a deterministic workflow.
 
-Interactive Go shell with a shared command registry, persisted history, ANSI colors, tab completion, built-in modules, an OpenAI-compatible tool-calling agent, and an experimental Extism/WASM bridge.
+Interactive Go shell with a shared command registry, persisted history, ANSI colors, tab completion, infrastructure providers, an OpenAI-compatible tool-calling agent, and an experimental Extism/WASM bridge.
 
 ## Current plugin discovery and agent prompt
 
@@ -202,7 +202,7 @@ Run `plugins list` or `plugins info diagnostics` to inspect loaded WASM modules,
 
 Output defaults to a readable view (`plugins list` uses a table, `plugins info NAME` uses detail fields). Use `set format json` for JSON-formatted command results, and `set format table` to switch back. In JSON mode AI answers are wrapped as `{"answer":"..."}`. Command output is visually separated from the next prompt. See [docs/shell.md](docs/shell.md).
 
-Plugin manifests now support optional title, description, author, JSON input/output schemas and examples. CLI discovery (`plugins list`, `plugins info network`, `help network health`) and AI tools share these fields. Older `support.shell/v1alpha1` plugins remain supported; an MCP adapter has not yet been implemented. Details: [docs/plugins.md](docs/plugins.md).
+Plugin manifests now support optional title, description, author, JSON input/output schemas and examples. CLI discovery (`plugins list`, `plugins info network`, `help network health`) and AI tools share these fields. Older `support.shell/v2alpha1` plugins remain supported; an MCP adapter has not yet been implemented. Details: [docs/plugins.md](docs/plugins.md).
 
 ### Stdio MCP server
 
