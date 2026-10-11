@@ -4,7 +4,8 @@ import (
 	"context"
 	"example.com/support-shell/internal/agent"
 	"example.com/support-shell/internal/core"
-	"example.com/support-shell/internal/modules"
+	"example.com/support-shell/internal/provider"
+	"example.com/support-shell/internal/providers/kubernetes"
 	"example.com/support-shell/internal/mcp"
 	"example.com/support-shell/internal/pluginmanager"
 	"example.com/support-shell/internal/shell"
@@ -19,11 +20,12 @@ func main() {
 	flag.Parse()
 	r := core.NewRegistry()
 	if err := configureToolPolicy(r); err != nil { fmt.Fprintln(os.Stderr, "tool policy:", err); os.Exit(1) }
-	modules.RegisterDemo(r)
-	modules.RegisterKubernetes(r)
+	providers := provider.NewRegistry()
+	if err := providers.Register(kubernetes.New()); err != nil { fmt.Fprintln(os.Stderr,"provider:",err);os.Exit(1) }
+	if err := providers.BindTools(r); err != nil { fmt.Fprintln(os.Stderr,"provider tools:",err);os.Exit(1) }
 	manager := pluginmanager.New()
 	if err := manager.Register(r); err != nil { fmt.Fprintln(os.Stderr, "plugin manager:", err); os.Exit(1) }
-	if err := loadPlugins(r, manager); err != nil {
+	if err := loadPlugins(r, providers, manager); err != nil {
 		fmt.Fprintln(os.Stderr, "plugin:", err)
 		os.Exit(1)
 	}
