@@ -101,11 +101,11 @@ The plugin exports `describe`, `execute`, `complete`. Its host callback may call
 ```text
 k8s contexts             # current context, name, cluster, namespace as a table
 k8s context list         # alias
-k8s context use <name>   # preview switch, prompts Apply? [y/N] directly
+connections use kubernetes/<name>   # switch this Shell session, prompts Apply? [y/N]
 Answer y + Enter to apply, or press Enter to cancel; the current Kubernetes context appears in the prompt
 ```
 
-`Tab` completes `k8s context use <name>` from the local kubeconfig. Context names with spaces are not supported by the current CLI token parser. The switch changes the active context in the local kubeconfig (same scope as `kubectl config use-context`), so it affects other kubectl processes using the same file. AI tools cannot invoke the mutating command through the normal registry executor.
+`Tab` completes `connections use kubernetes/<name>` from the local kubeconfig. Connection selection only affects this Support Shell session; no `kubectl config use-context` is executed. Provider calls use an explicit `--context`, including tool calls made by the AI agent. The Agent conversation is reset after switching connections.
 
 ## Kubernetes display and completion
 
