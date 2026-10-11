@@ -2,9 +2,9 @@
 # Values must be exact Registry command IDs; restrictions only deny.
 deny:
   cli:
-    - k8s.pod.logs
+    - provider.kubernetes.pod.logs
   agent:
     - k8s.events
   mcp:
-    - k8s.pod.logs
+    - provider.kubernetes.pod.logs
     - k8s.events
