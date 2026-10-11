@@ -56,7 +56,7 @@ optional `SUPPORT_KUBERNETES_CONNECTION` environment variable chooses a differen
 context. A local selection never writes to kubeconfig; resource operations always pass
 `kubectl --context <selected>`, including requests from the AI Agent and WASM plugins.
 
-In Shell, use `connections`, `connections current`, and
+In Shell, use `ctx` (brief active connections), `connections` (all choices), `connections current`, and
 `connections use kubernetes/<name>`. Selection asks for `Apply? [y/N]`
 but does **not** require infrastructure mutation approval.
 
