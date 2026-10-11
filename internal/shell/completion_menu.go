@@ -43,7 +43,7 @@ func selectCompletion(reader *bufio.Reader, out io.Writer, choices []string, col
 	// Repaint only menu rows, leaving the current input intact.
 	repaint := func() {
 		visible := menuHeight
-		fmt.Fprintf(out, "\r\x1b[%dA", visible+1)
+		fmt.Fprintf(out, "\r\x1b[%dA", visible)
 		for i := 0; i < visible; i++ {
 			fmt.Fprint(out, "\r\x1b[2K")
 			idx := start + i
@@ -64,15 +64,18 @@ func selectCompletion(reader *bufio.Reader, out io.Writer, choices []string, col
 		fmt.Fprint(out, "\r")
 	}
 	cleanup := func() {
+		// The menu starts one row below the edit line. Its footer is
+		// exactly menuHeight rows below the first choice.
 		visible := menuHeight
-		fmt.Fprintf(out, "\r\x1b[%dA", visible+1)
-		for i := 0; i < visible+1; i++ {
+		fmt.Fprintf(out, "\r\x1b[%dA", visible)
+		for i := 0; i <= visible; i++ {
 			fmt.Fprint(out, "\r\x1b[2K")
 			if i < visible {
 				fmt.Fprint(out, "\x1b[1B")
 			}
 		}
-		fmt.Fprintf(out, "\r\x1b[%dA", visible)
+		// Restore the input line; the editor will redraw that line.
+		fmt.Fprintf(out, "\r\x1b[%dA", visible+1)
 	}
 	draw()
 	for {
