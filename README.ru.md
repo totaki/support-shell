@@ -38,6 +38,8 @@ make run
 ```text
 help
 commands
+providers
+providers capabilities
 k8s contexts
 k8s nodes
 k8s pods kube-system
