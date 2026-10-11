@@ -1,31 +1,38 @@
 package shell
 
 import (
-	"context"
-	"example.com/support-shell/internal/core"
-	"testing"
+ "context"
+ "testing"
+
+ "example.com/support-shell/internal/core"
+ "example.com/support-shell/internal/provider"
 )
 
-func TestContextApproval(t *testing.T) {
-	for _, tc := range []struct {
-		input string
-		want  int
-	}{{"", 0}, {"n", 0}, {"yes", 0}, {"Y", 1}, {"y", 1}} {
-		called := 0
-		reg := core.NewRegistry()
-		if err := reg.Add(core.Command{ID: "provider.kubernetes.context.use", Path: "k8s context use", Risk: "mutate", Handler: func(_ context.Context, _ map[string]any) (any, error) { called++; return "ok", nil }}); err != nil {
-			t.Fatal(err)
-		}
-		sh := &Shell{Registry: reg, PendingContext: "prod"}
-		sh.applyContextDecision(context.Background(), tc.input)
-		if called != tc.want || sh.PendingContext != "" {
-			t.Fatalf("input=%q called=%d pending=%q", tc.input, called, sh.PendingContext)
-		}
-	}
+func TestConnectionSelectionConfirmation(t *testing.T) {
+ providers:=provider.NewRegistry()
+ catalog:=provider.NewCatalog("kubernetes")
+ catalog.SetConnectionDiscovery(func(context.Context)([]provider.Connection,error){
+  return []provider.Connection{
+   {Provider:"kubernetes",ID:"dev",Target:"dev",Default:true},
+   {Provider:"kubernetes",ID:"prod",Target:"prod"},
+  },nil
+ })
+ _=catalog.Add(provider.Operation{ID:"provider.kubernetes.dummy",Path:"k8s dummy",Risk:"read",Handler:func(context.Context,map[string]any)(any,error){return nil,nil}})
+ if err:=providers.Register(catalog);err!=nil{t.Fatal(err)}
+ for _,tc:=range []struct{answer,want string}{
+  {"n","dev"},{"","dev"},{"yes","dev"},{"Y","prod"},{"y","prod"},
+ } {
+  t.Run(tc.answer,func(t *testing.T){
+   session:=provider.NewSession()
+   if err:=session.SelectDefaults(context.Background(),providers);err!=nil{t.Fatal(err)}
+   sh:=&Shell{Registry:core.NewRegistry(),Providers:providers,Connections:session,PendingContext:"kubernetes/prod"}
+   sh.applyContextDecision(context.Background(),tc.answer)
+   if got:=session.Current("kubernetes");got!=tc.want{t.Fatalf("answer=%q current=%q want=%q",tc.answer,got,tc.want)}
+   if sh.PendingContext!=""{t.Fatalf("pending not cleared: %q",sh.PendingContext)}
+  })
+ }
 }
-func TestCurrentContextName(t *testing.T) {
-	output := "CURRENT   NAME   CLUSTER\n*         dev    dev-cluster\n          prod   prod-cluster"
-	if got := currentContextName(output); got != "dev" {
-		t.Fatal(got)
-	}
+func TestCurrentContextName(t *testing.T){
+ output:="CURRENT   NAME   CLUSTER\n*         dev    dev-cluster\n          prod   prod-cluster"
+ if got:=currentContextName(output);got!="dev"{t.Fatal(got)}
 }
