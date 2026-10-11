@@ -49,3 +49,15 @@ func TestPluginDescriptionInList(t *testing.T) {
  out:=s.renderResult("plugins.list",result)
  if !strings.Contains(out,"Inspects nodes"){t.Fatal(out)}
 }
+
+func TestOpenStackListRendering(t *testing.T){
+ sh:=Shell{}
+ input:=[]any{map[string]any{"ID":"vm-01","Name":"worker-0","Status":"ACTIVE","Networks":map[string]any{"private":[]any{"10.0.0.2"}}}}
+ text:=sh.renderResult("provider.openstack.servers",input)
+ for _,needle:=range []string{"ID","NAME","worker-0","ACTIVE","10.0.0.2"}{
+  if !strings.Contains(strings.ToUpper(text),strings.ToUpper(needle)){t.Fatalf("missing %q from %q",needle,text)}
+ }
+ sh.OutputFormat="json"
+ jsonResult:=sh.renderResult("provider.openstack.servers",input)
+ if !strings.Contains(jsonResult,`"vm-01"`){t.Fatalf("JSON output missing ID: %s",jsonResult)}
+}
