@@ -85,18 +85,20 @@ else:
             send(b"commands\r")
             expect("k8s contexts")
             # Decline connection selection; kubeconfig must remain unchanged.
-            send(b"k8s context use test\r")
+            send(b"connections use kubernetes/test\r")
             expect("Apply? [y/N]")
             send(b"n\r")
             expect("Connection selection cancelled")
             assert state.read_text()=="dev", "declined switch changed context"
             # Accept local connection selection and observe refreshed prompt.
-            send(b"k8s context use test\r")
+            send(b"connections use kubernetes/test\r")
             expect("Apply? [y/N]")
             send(b"y\r")
             expect("Selected connection: kubernetes/test")
             expect("support:kubernetes/test")
-            assert state.read_text()=="dev", "connection selection mutated kubeconfig"\n            send(b"k8s nodes\\r")\n            expect("test-node")
+            assert state.read_text()=="dev", "connection selection mutated kubeconfig"
+            send(b"k8s nodes\\r")
+            expect("test-node")
             send(b"exit\r")
             proc.wait(timeout=5)
             assert proc.returncode==0, f"shell exited {proc.returncode}"
