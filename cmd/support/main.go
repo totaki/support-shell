@@ -10,6 +10,7 @@ import (
 	"example.com/support-shell/internal/pluginmanager"
 	"example.com/support-shell/internal/shell"
 	"flag"
+	"strings"
 	"fmt"
 	"os"
 )
@@ -30,7 +31,15 @@ func main() {
 		os.Exit(1)
 	}
 	if len(flag.Args()) == 2 && flag.Arg(0) == "mcp" && flag.Arg(1) == "serve" {
-		if err := (&mcp.Server{Registry:r}).Serve(context.Background(),os.Stdin,os.Stdout);err!=nil {
+		ctx:=context.Background()
+  session:=provider.NewSession()
+  if err:=session.SelectDefaults(ctx,providers);err!=nil{
+   fmt.Fprintln(os.Stderr,"provider connection discovery:",err)
+  }
+  if selected:=strings.TrimSpace(os.Getenv("SUPPORT_KUBERNETES_CONNECTION"));selected!=""{
+   if err:=session.Select(ctx,providers,"kubernetes",selected);err!=nil{fmt.Fprintln(os.Stderr,"provider connection:",err);os.Exit(1)}
+  }
+  if err := (&mcp.Server{Registry:r}).Serve(session.Bind(ctx),os.Stdin,os.Stdout);err!=nil {
 			fmt.Fprintln(os.Stderr,"mcp:",err)
 			os.Exit(1)
 		}
@@ -40,7 +49,7 @@ func main() {
 		fmt.Fprintln(os.Stderr,"usage: support [--command text] | support mcp serve")
 		os.Exit(2)
 	}
-	s := &shell.Shell{Registry: r, Agent: agent.New(r)}
+	s := &shell.Shell{Registry: r, Providers: providers, Connections:provider.NewSession(), Agent: agent.New(r)}
 	s.LoadHistory()
 	if *command != "" {
 		if !s.Handle(context.Background(), *command) {
