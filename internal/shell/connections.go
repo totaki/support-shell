@@ -48,6 +48,26 @@ func (s *Shell) syncConnectionLabel(){
  s.CurrentContext=strings.Join(names,",")
 }
 
+// printActiveConnections reports only the current selections; it does not
+// discover/execute anything or expose cloud credentials.
+func (s *Shell) printActiveConnections() {
+ if s.Connections==nil {
+  fmt.Println("No active connections")
+  return
+ }
+ selected:=s.Connections.Selected()
+ if len(selected)==0 {
+  fmt.Println("No active connections")
+  return
+ }
+ providers:=make([]string,0,len(selected))
+ for name:=range selected{providers=append(providers,name)}
+ sort.Strings(providers)
+ for _,name:=range providers {
+  fmt.Printf("%s: %s\n",name,selected[name])
+ }
+}
+
 func (s *Shell) listConnections(ctx context.Context){
  if s.Providers==nil{fmt.Println("No provider registry");return}
  fmt.Println("CURRENT  CONNECTION")
