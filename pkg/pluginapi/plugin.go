@@ -8,7 +8,7 @@ import (
     "strings"
 )
 
-const APIVersion = "support.shell/v1alpha1"
+const APIVersion = "support.shell/v2alpha1"
 
 type Risk string
 const (
