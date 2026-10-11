@@ -38,7 +38,7 @@ else:
         env = dict(os.environ, PATH=str(tmp)+os.pathsep+os.environ.get("PATH",""),
                    XDG_CONFIG_HOME=str(tmp), NO_COLOR="1", TERM="xterm",
                    PLUGIN_PATH="plugins/fixture/target/wasm32-wasip1/release/support_fixture.wasm",
-                   SUPPORT_PTY_STATE=str(state), SUPPORT_API_KEY="",
+                   SUPPORT_PTY_STATE=str(state), SUPPORT_KUBERNETES_CONNECTION="", SUPPORT_API_KEY="",
                    SUPPORT_API_BASE="https://api.openai.com/v1")
         master, slave = pty.openpty()
         proc = subprocess.Popen([BINARY], stdin=slave, stdout=slave, stderr=slave,
