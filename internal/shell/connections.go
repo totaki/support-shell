@@ -4,6 +4,7 @@ import (
  "context"
  "fmt"
  "os"
+ "sort"
  "strings"
 
  "example.com/support-shell/internal/provider"
@@ -20,6 +21,7 @@ func (s *Shell) connectionContext(ctx context.Context) context.Context {
   }
   if name:=strings.TrimSpace(os.Getenv("SUPPORT_KUBERNETES_CONNECTION"));name!=""{
    if err:=s.Connections.Select(ctx,s.Providers,"kubernetes",name);err!=nil{
+    s.Connections.Clear("kubernetes")
     fmt.Fprintln(os.Stderr,"provider connection:",err)
    }
   }
@@ -30,11 +32,14 @@ func (s *Shell) connectionContext(ctx context.Context) context.Context {
 
 func (s *Shell) syncConnectionLabel(){
  s.CurrentContext=""
- if s.Connections!=nil{
-  if selected:=s.Connections.Current("kubernetes");selected!=""{
-   s.CurrentContext="kubernetes/"+selected
-  }
+ if s.Connections==nil{return}
+ values:=s.Connections.Selected()
+ names:=make([]string,0,len(values))
+ for providerID,target:=range values{
+  names=append(names,providerID+"/"+target)
  }
+ sort.Strings(names)
+ s.CurrentContext=strings.Join(names,",")
 }
 
 func (s *Shell) listConnections(ctx context.Context){
