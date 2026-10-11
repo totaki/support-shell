@@ -40,6 +40,8 @@ help
 commands
 providers
 providers capabilities
+connections
+connections use kubernetes/<контекст>
 k8s contexts
 k8s nodes
 k8s pods kube-system
