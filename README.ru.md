@@ -10,6 +10,8 @@
 
 **Состояние:** PoC. Изменяющие операции через обычный Executor запрещены. Результаты Kubernetes-инструментов отправляются выбранному LLM-провайдеру — не используйте подключение с доступом к секретам, если не допускается передача этих данных.
 
+**OpenStack:** нужен установленный `python-openstackclient` и `clouds.yaml` (либо переменные `OS_*`). Провайдер умеет `connections use openstack/<имя>`, `openstack servers`, `openstack networks`, `openstack volumes` и другие read-only запросы. `OS_CLOUD` или `SUPPORT_OPENSTACK_CONNECTION` задают начальное подключение. Подробнее: [провайдеры](docs/providers.md).
+
 **Архитектура:** [провайдеры и capabilities](docs/providers.md). Kubernetes — первый встроенный провайдер; OpenStack, PostgreSQL и Kafka планируются отдельными драйверами. Нативные операции имеют ID `provider.kubernetes.*`, а короткие команды CLI (`k8s pods` и т. д.) остаются интерфейсом пользователя.
 
 ## Локальная конфигурация через .env
