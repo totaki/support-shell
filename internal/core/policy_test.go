@@ -35,14 +35,14 @@ func TestToolPolicyReasonsAndIsolation(t *testing.T) {
  add("unsafe.write","write")
  add("demo.cluster.fake","read")
  r.SetToolPolicy(ToolPolicy{Deny:map[Surface]map[string]bool{
-  SurfaceMCP:{"restricted.read":true},
+  SurfaceMCP:{"restricted.read":true,"demo.cluster.fake":true},
   SurfaceCLI:{"safe.read":true},
  }})
  checks:=[]struct{surface Surface;id,reason string}{
   {SurfaceMCP,"safe.read",""},
   {SurfaceMCP,"restricted.read","denied by policy"},
   {SurfaceMCP,"unsafe.write","non-read command"},
-  {SurfaceMCP,"demo.cluster.fake","demo cluster tool"},
+  {SurfaceMCP,"demo.cluster.fake","denied by policy"},
   {SurfaceAgent,"restricted.read",""},
   {SurfaceCLI,"safe.read","denied by policy"},
   {SurfaceCLI,"unsafe.write",""},
