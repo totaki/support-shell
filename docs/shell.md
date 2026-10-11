@@ -14,7 +14,9 @@ The REPL first tries to resolve input as a known command. Unmatched input is sen
 
 ```text
 k8s contexts
-k8s context use <context>
+connections
+connections current
+connections use kubernetes/<context>
 k8s nodes
 k8s namespaces
 k8s pods <namespace>
@@ -28,7 +30,7 @@ k8s top nodes
 k8s top pods <namespace>
 ```
 
-`k8s context use` presents an interactive `Apply? [y/N]` confirmation and changes the active local kubeconfig context. Read commands return structured data internally; the Shell renders concise tables for common resource lists and terminal Markdown for agent responses.
+`connections use kubernetes/<context>` asks for `Apply? [y/N]` and selects the connection **only in the current Support Shell session**. The local kubeconfig current-context remains unchanged. All Kubernetes resource calls use `kubectl --context <selected>`. `connections` lists discovered provider connections with `*` for the session selection. The initial selection comes from kubeconfig current-context or `SUPPORT_KUBERNETES_CONNECTION`, if provided. Read commands return structured data internally; the Shell renders concise tables for common resource lists and terminal Markdown for agent responses.
 
 `report` displays the latest agent report; `report save` writes Markdown into the user's configuration directory. Saved reports and history can include sensitive operational details.
 
@@ -60,4 +62,4 @@ Current limitations: simple whitespace argument parsing, no streaming `logs --fo
 
 ## Автодополнение Tab
 
-Теперь Tab использует единый набор встроенных команд Shell и команд Registry. Поддерживаются `help <command>` (по всем зарегистрированным путям, включая WASM), `set format table|json`, `plugins info <name>`, а также `report`, `report save`, `agent reset` и Kubernetes-команды. Если команда предоставляет собственный `Completer`, он применяется к её аргументам (например, имена Kubernetes-контекстов и плагинов). Для произвольных аргументов, которые не имеют отдельного источника вариантов, динамических подсказок пока нет — это не ошибка Tab. Подсказки работают в интерактивном терминальном режиме; при запуске через stdin pipe используется упрощённый ввод.
+Теперь Tab использует единый набор встроенных команд Shell и команд Registry. Поддерживаются `help <command>` (по всем зарегистрированным путям, включая WASM), `set format table|json`, `plugins info <name>`, а также `report`, `report save`, `agent reset` и Kubernetes-команды. Если команда предоставляет собственный `Completer`, он применяется к её аргументам (например, имена подключений Kubernetes и плагинов). Для произвольных аргументов, которые не имеют отдельного источника вариантов, динамических подсказок пока нет — это не ошибка Tab. Подсказки работают в интерактивном терминальном режиме; при запуске через stdin pipe используется упрощённый ввод.
