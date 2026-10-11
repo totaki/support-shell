@@ -44,14 +44,15 @@ func (s *Shell) syncConnectionLabel(){
 
 func (s *Shell) listConnections(ctx context.Context){
  if s.Providers==nil{fmt.Println("No provider registry");return}
- connections,err:=s.Providers.Connections(ctx)
- if err!=nil{fmt.Fprintln(os.Stderr,"connections:",err);return}
- if len(connections)==0{fmt.Println("No connections available");return}
  fmt.Println("CURRENT  CONNECTION")
- for _,connection:=range connections{
-  marker:=" "
-  if s.Connections!=nil && s.Connections.Current(connection.Provider)==connection.Target {marker="*"}
-  fmt.Printf("  %s      %s\n",marker,connection.QualifiedID())
+ for _,providerID:=range s.Providers.IDs(){
+  entries,err:=s.Providers.ConnectionsFor(ctx,providerID)
+  if err!=nil{fmt.Fprintln(os.Stderr,"connections:",err);continue}
+  for _,connection:=range entries{
+   marker:=" "
+   if s.Connections!=nil && s.Connections.Current(connection.Provider)==connection.Target{marker="*"}
+   fmt.Printf("  %s      %s\n",marker,connection.QualifiedID())
+  }
  }
 }
 
@@ -59,7 +60,7 @@ func (s *Shell) queueConnection(ctx context.Context,raw string){
  if s.Providers==nil{fmt.Fprintln(os.Stderr,"connections: no provider registry");return}
  providerID,id,ok:=strings.Cut(raw,"/")
  if !ok||providerID==""||id==""{fmt.Fprintln(os.Stderr,"usage: connections use <provider>/<connection>");return}
- connections,err:=s.Providers.Connections(ctx)
+ connections,err:=s.Providers.ConnectionsFor(ctx,providerID)
  if err!=nil{fmt.Fprintln(os.Stderr,"connections:",err);return}
  for _,c:=range connections{
   if c.Provider==providerID && c.ID==id{
