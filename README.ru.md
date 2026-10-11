@@ -26,6 +26,8 @@ make run-plugin
 
 Поддерживаются строки `KEY=value`, `export KEY=value`, кавычки и комментарии. Подстановка переменных типа `$HOME` не выполняется. Для запуска из другого каталога положи `.env` туда или экспортируй переменные вручную.
 
+В приглашении отображается только `support ❯`. Команда `ctx` показывает активные подключения короткими строками (`kubernetes: default/rnd`, `openstack: prod-my`), а `connections` — полный список доступных подключений.
+
 ## Быстрый запуск
 
 Требования: Go 1.23+, macOS/Linux, kubectl и рабочий kubeconfig для Kubernetes-команд.
@@ -42,6 +44,7 @@ help
 commands
 providers
 providers capabilities
+ctx
 connections
 connections use kubernetes/<контекст>
 k8s contexts
