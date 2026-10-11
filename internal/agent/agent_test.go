@@ -94,14 +94,14 @@ func TestToolTrace(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n++
 		if n == 1 {
-			_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","tool_calls":[{"id":"c1","type":"function","function":{"name":"k8s_nodes","arguments":"{}"}}]}}]}`))
+			_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","tool_calls":[{"id":"c1","type":"function","function":{"name":"provider_kubernetes_nodes","arguments":"{}"}}]}}]}`))
 		} else {
 			_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"checked"}}]}`))
 		}
 	}))
 	defer srv.Close()
 	reg := core.NewRegistry()
-	_ = reg.Add(core.Command{ID: "k8s.nodes", Path: "k8s nodes", Risk: "read", Handler: func(context.Context, map[string]any) (any, error) { return map[string]any{"items": []any{}}, nil }})
+	_ = reg.Add(core.Command{ID: "provider.kubernetes.nodes", Path: "k8s nodes", Risk: "read", Handler: func(context.Context, map[string]any) (any, error) { return map[string]any{"items": []any{}}, nil }})
 	a := New(reg)
 	a.URL = srv.URL
 	a.Key = "test"
@@ -110,7 +110,7 @@ func TestToolTrace(t *testing.T) {
 	if _, err := a.Ask(context.Background(), "check"); err != nil {
 		t.Fatal(err)
 	}
-	if len(trace) != 1 || trace[0].Command != "k8s.nodes" || trace[0].Err != nil {
+	if len(trace) != 1 || trace[0].Command != "provider.kubernetes.nodes" || trace[0].Err != nil {
 		t.Fatalf("unexpected trace: %+v", trace)
 	}
 }
