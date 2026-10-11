@@ -13,7 +13,7 @@ func TestContextApproval(t *testing.T) {
 	}{{"", 0}, {"n", 0}, {"yes", 0}, {"Y", 1}, {"y", 1}} {
 		called := 0
 		reg := core.NewRegistry()
-		if err := reg.Add(core.Command{ID: "k8s.context.use", Path: "k8s context use", Risk: "mutate", Handler: func(_ context.Context, _ map[string]any) (any, error) { called++; return "ok", nil }}); err != nil {
+		if err := reg.Add(core.Command{ID: "provider.kubernetes.context.use", Path: "k8s context use", Risk: "mutate", Handler: func(_ context.Context, _ map[string]any) (any, error) { called++; return "ok", nil }}); err != nil {
 			t.Fatal(err)
 		}
 		sh := &Shell{Registry: reg, PendingContext: "prod"}
