@@ -33,10 +33,16 @@ type Provider interface {
 type Catalog struct {
  id string
  operations []Operation
+ discover func(context.Context)([]Connection,error)
 }
 
 func NewCatalog(id string)*Catalog{return &Catalog{id:id}}
 func(c *Catalog) ID()string{return c.id}
+func(c *Catalog) SetConnectionDiscovery(fn func(context.Context)([]Connection,error)){c.discover=fn}
+func(c *Catalog) Connections(ctx context.Context)([]Connection,error){
+ if c.discover==nil{return []Connection{},nil}
+ return c.discover(ctx)
+}
 func(c *Catalog) Operations()[]Operation{return append([]Operation(nil),c.operations...)}
 func(c *Catalog) Add(o Operation)error{
  if o.ID==""||o.Path==""||o.Handler==nil{return errors.New("invalid provider operation")}
