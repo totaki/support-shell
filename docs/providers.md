@@ -50,10 +50,19 @@ Pod environment and logs may contain secrets. The provider host remains read-onl
 Mutating provider operations remain gated by Core approval and are not grantable to a WASM
 plugin. The existing approval workflow is **not yet fully integrated** for generic commands.
 
-The current Kubernetes driver uses the local `kubectl` and kubeconfig, including a
-process-global kubeconfig context switch. Multi-connection context isolation is a planned
-provider-layer feature, not an implemented guarantee. Do not concurrently share a mutable
-kubeconfig with unrelated operators.
+Kubernetes connections are discovered from local kubeconfig contexts. Each Shell session
+keeps its own active connection, initially adopting the current kubeconfig context. The
+optional `SUPPORT_KUBERNETES_CONNECTION` environment variable chooses a different initial
+context. A local selection never writes to kubeconfig; resource operations always pass
+`kubectl --context <selected>`, including requests from the AI Agent and WASM plugins.
+
+In Shell, use `connections`, `connections current`, and
+`connections use kubernetes/<name>`. Selection asks for `Apply? [y/N]`
+but does **not** require infrastructure mutation approval.
+
+The MCP stdio process receives one initial connection selection at startup; use
+`SUPPORT_KUBERNETES_CONNECTION` to set it. Per-client MCP sessions and persisted connection
+credentials are not yet implemented. There is no global kubeconfig mutation.
 
 OpenStack, PostgreSQL and Kafka will be separate drivers registered through the same
 provider contract. Their operations and credentials should stay provider-specific; avoid
