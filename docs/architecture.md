@@ -45,7 +45,9 @@ The plugin API version changed to `support.shell/v2alpha1`. This is intentionall
 rebuild old WASM artifacts. There is no compatibility alias for old `k8s.*` operation IDs.
 
 Operator approval is not fully integrated with generic CLI/Agent workflows yet. The Kubernetes
-context switch still changes local kubeconfig state; session-scoped connections are follow-up work.
+connection selection is now session-local and does not edit kubeconfig. MCP currently binds
+one connection per server process; connection-specific credentials and remote connection
+stores are future work.
 Neither part should be treated as a completed production security boundary.
 
 See [providers.md](providers.md) for concrete contracts and test commands.
