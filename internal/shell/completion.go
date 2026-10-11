@@ -11,7 +11,7 @@ import (
 // All returned candidates are complete input lines, not only suffixes.
 func (s *Shell) completions(ctx context.Context, prefix string) []string {
  ctx=s.connectionContext(ctx)
- builtins:=[]string{"help","commands","connections","connections current","connections use ","tools permissions","history","report","report save","agent reset","set format table","set format json","exit","quit"}
+ builtins:=[]string{"help","commands","ctx","connections","connections current","connections use ","tools permissions","history","report","report save","agent reset","set format table","set format json","exit","quit"}
  candidates:=append([]string{},builtins...)
  for _,cmd:=range s.Registry.ListFor(core.SurfaceCLI){candidates=append(candidates,cmd.Path)}
  if strings.HasPrefix(prefix,"connections use ") && s.Providers!=nil{
