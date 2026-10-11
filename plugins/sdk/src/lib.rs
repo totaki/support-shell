@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-pub const API_VERSION: &str = "support.shell/v1alpha1";
+pub const API_VERSION: &str = "support.shell/v2alpha1";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
