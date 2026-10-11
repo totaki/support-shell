@@ -6,9 +6,9 @@ fn condition<'a>(node: &'a Value, kind: &str) -> Option<&'a Value> {
 }
 
 pub fn analyze(nodes: &Value) -> Result<Value, String> {
-    if let Some(err) = nodes.get("error") { return Err(format!("k8s.nodes: {err}")); }
+    if let Some(err) = nodes.get("error") { return Err(format!("provider.kubernetes.nodes: {err}")); }
     let items = nodes.get("items").and_then(Value::as_array)
-        .ok_or("k8s.nodes response has no items array")?;
+        .ok_or("provider.kubernetes.nodes response has no items array")?;
     let mut findings: Vec<Value> = Vec::new();
     let mut ready = 0usize;
     let mut unknown = 0usize;
@@ -20,28 +20,28 @@ pub fn analyze(nodes: &Value) -> Result<Value, String> {
             Some("False") => {
                 unhealthy += 1;
                 findings.push(json!({"node":name,"severity":"critical","code":"NODE_NOT_READY",
-                    "message":"Node Ready condition is False","source":"k8s.nodes","condition":"Ready"}));
+                    "message":"Node Ready condition is False","source":"provider.kubernetes.nodes","condition":"Ready"}));
             }
             _ => {
                 unknown += 1;
                 findings.push(json!({"node":name,"severity":"warning","code":"NODE_READY_UNKNOWN",
-                    "message":"Node Ready condition is missing or Unknown","source":"k8s.nodes","condition":"Ready"}));
+                    "message":"Node Ready condition is missing or Unknown","source":"provider.kubernetes.nodes","condition":"Ready"}));
             }
         }
         for kind in ["MemoryPressure", "DiskPressure", "PIDPressure"] {
             match condition(node, kind).and_then(|c| c.get("status")).and_then(Value::as_str) {
                 Some("True") => findings.push(json!({"node":name,"severity":"warning",
                     "code":format!("{}_ACTIVE",kind.to_uppercase()),
-                    "message":format!("{kind} is True"),"source":"k8s.nodes","condition":kind})),
+                    "message":format!("{kind} is True"),"source":"provider.kubernetes.nodes","condition":kind})),
                 Some("False") => {},
                 _ => findings.push(json!({"node":name,"severity":"info",
                     "code":format!("{}_UNKNOWN",kind.to_uppercase()),
-                    "message":format!("{kind} was not confirmed False"),"source":"k8s.nodes","condition":kind}))
+                    "message":format!("{kind} was not confirmed False"),"source":"provider.kubernetes.nodes","condition":kind}))
             }
         }
     }
     Ok(json!({
-        "source":"k8s.nodes","coverage":{"total":items.len(),"ready":ready,"not_ready":unhealthy,"unknown_ready":unknown},
+        "source":"provider.kubernetes.nodes","coverage":{"total":items.len(),"ready":ready,"not_ready":unhealthy,"unknown_ready":unknown},
         "findings":findings,"findings_count":findings.len(),
         "note":"Snapshot of Kubernetes NodeStatus; does not establish historical stability or root cause"
     }))
