@@ -69,7 +69,7 @@ else:
             os.write(master,payload)
         try:
             expect("Support Shell")
-            expect("support:kubernetes/dev")
+            expect("support ❯")
             # Unique built-in completion: 'hist' + Tab -> history.
             send(b"hist\t\r")
             expect("1  history")
@@ -95,7 +95,9 @@ else:
             expect("Apply? [y/N]")
             send(b"y\r")
             expect("Selected connection: kubernetes/test")
-            expect("support:kubernetes/test")
+            expect("support ❯")
+            send(b"ctx\r")
+            expect("kubernetes: test")
             assert state.read_text()=="dev", "connection selection mutated kubeconfig"
             send(b"k8s nodes\r")
             expect("test-node")
