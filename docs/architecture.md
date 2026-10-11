@@ -1,44 +1,57 @@
 # Architecture
 
-Support Shell is an experimental interactive support console written in Go.
+Support Shell is a provider-first infrastructure support console written in Go.
 
 ```text
-User input -> Shell parser -> Command Registry -> Executor -> Go modules (kubectl)
-                  |                 ^
-                  +-> AI Agent -----+ (read-only tool calls)
-                                    ^
-                   Extism/WASM -> host_call (capability-filtered)
+                    Operator
+                   CLI / MCP / AI
+                         |
+                    Core Registry
+                input / policy / approval
+                         |
+        +----------------+---------------+
+        |                                |
+ Provider Registry                 WASM Plugin Manager
+        |                                |
+  Kubernetes Provider <---- granted read-only capabilities
+        |
+     kubectl API
 ```
 
 ## Components
 
-- `cmd/support`: entrypoint; registers modules and optional Extism adapter (`-tags extism`).
-- `internal/core`: command metadata, Registry and Executor.
-- `internal/shell`: terminal editor, completion, history, command dispatch and output rendering.
-- `internal/modules`: Go commands including the Kubernetes adapter, using `kubectl` without a shell.
-- `internal/agent`: Chat Completions client, context, tools and tracing.
-- `pkg/pluginapi`: JSON-serializable versioned plugin manifest and request/result types.
-- `plugins/diagnostics`: Rust example compiling to WASI and calling Host capabilities.
+- `cmd/support` wires built-in providers, Core, optional WASM plugins and interfaces.
+- `internal/core` implements command dispatch, input validation, interface policies and the initial approval token mechanism.
+- `internal/provider` implements the infrastructure provider contract, registry, operation discovery and a read-only execution boundary for extensions.
+- `internal/providers/kubernetes` implements provider-specific Kubernetes operations and local kubeconfig connectivity.
+- `internal/shell` implements REPL, history, completion, terminal rendering and operator interaction.
+- `internal/agent` provides model tool calling, execution budget and context handling.
+- `internal/mcp` exposes policy-filtered read-only operations via stdio JSON-RPC.
+- `pkg/pluginapi` and `plugins/sdk` implement the v2alpha1 WASM plugin contract.
 
-The CLI, agent and WASM plugins share command IDs and the Executor. WASM plugins do not receive direct Kubernetes credentials; Host calls are gated by manifest capability declarations and an explicit read-only allowlist.
+Provider capabilities use stable IDs prefixed with `provider.<provider-name>.`, such as
+`provider.kubernetes.pods` and `provider.kubernetes.nodes`. Display paths (`k8s pods`)
+are UI commands rather than capability identifiers. Run `providers` or
+`providers capabilities` to inspect active drivers.
 
-## Boundaries
+## Responsibility boundaries
 
-The system remains a PoC: no independent RBAC or complete audit trail, mutation approvals, MCP transport, or guaranteed sandbox hardening. Plugin `execute` still returns raw JSON for compatibility; it does not yet use the `pluginapi.Result` envelope.
+Providers own infrastructure connectivity, contexts, native operations and resource semantics.
+Plugins own diagnostics and runbooks. Plugins declare exactly which provider capabilities they need;
+WASM host calls go directly to the *read-only* provider execution boundary, never to arbitrary
+Core commands. CLI, MCP and AI expose tools via Core and follow its surface policies.
 
-## Validation
+The plugin API version changed to `support.shell/v2alpha1`. This is intentionally breaking;
+rebuild old WASM artifacts. There is no compatibility alias for old `k8s.*` operation IDs.
 
-GitHub Actions (`.github/workflows/ci.yml`) runs Go tests/race/vet/build and Rust WASM compilation. This is not an end-to-end Kubernetes test.
+Operator approval is not fully integrated with generic CLI/Agent workflows yet. The Kubernetes
+context switch still changes local kubeconfig state; session-scoped connections are follow-up work.
+Neither part should be treated as a completed production security boundary.
 
-## MCP adapter
+See [providers.md](providers.md) for concrete contracts and test commands.
 
-An optional stdio MCP server (`internal/mcp`) publishes the same read-only Registry commands through JSON-RPC `tools/list` and `tools/call`; it does not execute standalone plugin implementations or bypass Registry risk checks. WASM plugins remain implementation modules with their own Extism Host capabilities. See [mcp.md](mcp.md).
+## CI and testing
 
-
-## Tool access policy
-
-Registry maintains a per-interface policy for `cli`, `agent`, and `mcp`. CLI commands retain their existing explicit approval rule for writes. Agent and MCP expose only `risk: read` tools, excluding demo cluster tools, and each interface can additionally deny command IDs. The policy is checked both during discovery and during invocation (no reliance on tool-list filtering alone). Startup reads comma-separated exact command IDs from `SUPPORT_DENY_CLI`, `SUPPORT_DENY_AGENT`, and `SUPPORT_DENY_MCP`. The deny lists are process-local and static until restart. This is application-layer policy, not Kubernetes RBAC or WASM sandboxing.
-
-## YAML tool permissions
-
-Set `SUPPORT_POLICY_FILE=/path/to/tool-policy.yaml` to load interface deny lists at startup. Example: [examples/tool-policy.yaml](../examples/tool-policy.yaml). YAML uses `deny.cli`, `deny.agent`, and `deny.mcp`, each a sequence of **exact command IDs**. Environment variables `SUPPORT_DENY_CLI`, `SUPPORT_DENY_AGENT`, `SUPPORT_DENY_MCP` add further restrictions; they never override or grant access. Invalid files fail startup. The interactive command `tools permissions` prints all registered tools and their access decisions, including reasons for denials. Changes take effect after restart. These restrictions are separate from Kubernetes RBAC.
+CI runs Go tests (with race detection and coverage), Rust tests, WASM host builds, CLI/PTY E2E,
+MCP end-to-end tests and runaway WASM interruption/recovery. No real Kubernetes or OpenStack
+cluster is provisioned by CI. Reports are uploaded to Coveralls.
