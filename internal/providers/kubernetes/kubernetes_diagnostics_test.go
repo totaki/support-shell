@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"example.com/support-shell/internal/core"
+	"example.com/support-shell/internal/provider"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,7 +21,7 @@ func TestPodRestartsStructured(t *testing.T) {
 	t.Setenv("PATH", d+string(os.PathListSeparator)+os.Getenv("PATH"))
 	r := core.NewRegistry()
 	registerForTest(t, r)
-	out, err := r.Execute(context.Background(), "provider.kubernetes.pod.restarts", map[string]any{"namespace": "kube-system", "pod": "calico"})
+	out, err := r.Execute(provider.WithConnection(context.Background(),"kubernetes","dev"), "provider.kubernetes.pod.restarts", map[string]any{"namespace": "kube-system", "pod": "calico"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func TestLogsPreviousFlags(t *testing.T) {
 	t.Setenv("PATH", d+string(os.PathListSeparator)+os.Getenv("PATH"))
 	r := core.NewRegistry()
 	registerForTest(t, r)
-	out, err := r.Execute(context.Background(), "provider.kubernetes.pod.logs", map[string]any{"namespace": "kube-system", "pod": "calico", "previous": "true", "timestamps": "true"})
+	out, err := r.Execute(provider.WithConnection(context.Background(),"kubernetes","dev"), "provider.kubernetes.pod.logs", map[string]any{"namespace": "kube-system", "pod": "calico", "previous": "true", "timestamps": "true"})
 	if err != nil {
 		t.Fatal(err)
 	}
