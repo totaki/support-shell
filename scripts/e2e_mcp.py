@@ -34,6 +34,11 @@ replies = [json.loads(line) for line in proc.stdout.splitlines()]
 assert len(replies) == 6, f"expected 6 replies; got {replies}"
 assert replies[0]["result"]["serverInfo"]["name"] == "support-shell"
 listed = replies[1]["result"]["tools"]
+names = {item["name"] for item in listed}
+assert "provider.kubernetes.pods" in names, f"provider operation missing: {names}"
+assert "providers.list" in names, f"provider discovery missing: {names}"
+assert "provider.kubernetes.context.use" not in names, "write capability exposed through MCP"
+assert "k8s.pods" not in names, "obsolete operation ID exposed"
 tool = next((t for t in listed if t["name"] == "fixture.echo"), None)
 assert tool is not None, f"fixture.echo missing: {listed}"
 assert tool["inputSchema"]["required"] == ["message"], tool
