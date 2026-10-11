@@ -25,9 +25,10 @@ args=sys.argv[1:]
 state=Path(os.environ["SUPPORT_PTY_STATE"])
 if args==["config","view","-o=json"]:
  print(json.dumps({"current-context":state.read_text().strip(),"contexts":[{"name":"dev","context":{"cluster":"lab"}},{"name":"test","context":{"cluster":"lab"}}]}))
-elif args[:2]==["config","use-context"] and len(args)==3:
- state.write_text(args[2])
- print("Switched to context",args[2])
+elif args==["--context","test","get","nodes","-o","json"]:
+ print(json.dumps({"items":[{"metadata":{"name":"test-node"},"status":{"conditions":[{"type":"Ready","status":"True"}]}}]}))
+elif args==["--context","dev","get","nodes","-o","json"]:
+ print(json.dumps({"items":[{"metadata":{"name":"dev-node"},"status":{"conditions":[{"type":"Ready","status":"True"}]}}]}))
 else:
  sys.exit("unexpected kubectl invocation: "+repr(args))
 """)
@@ -68,7 +69,7 @@ else:
             os.write(master,payload)
         try:
             expect("Support Shell")
-            expect("support:dev")
+            expect("support:kubernetes/dev")
             # Unique built-in completion: 'hist' + Tab -> history.
             send(b"hist\t\r")
             expect("1  history")
@@ -82,20 +83,20 @@ else:
             send(b"abandoned\x03")
             expect("\r\n")
             send(b"commands\r")
-            expect("k8s context use")
-            # Decline context modification; fake kubectl state must remain unchanged.
+            expect("k8s contexts")
+            # Decline connection selection; kubeconfig must remain unchanged.
             send(b"k8s context use test\r")
             expect("Apply? [y/N]")
             send(b"n\r")
-            expect("Context switch cancelled")
+            expect("Connection selection cancelled")
             assert state.read_text()=="dev", "declined switch changed context"
-            # Accept context modification and observe refreshed prompt.
+            # Accept local connection selection and observe refreshed prompt.
             send(b"k8s context use test\r")
             expect("Apply? [y/N]")
             send(b"y\r")
-            expect("Switched context:")
-            expect("support:test")
-            assert state.read_text()=="test", "confirmed switch did not happen"
+            expect("Selected connection: kubernetes/test")
+            expect("support:kubernetes/test")
+            assert state.read_text()=="dev", "connection selection mutated kubeconfig"\n            send(b"k8s nodes\\r")\n            expect("test-node")
             send(b"exit\r")
             proc.wait(timeout=5)
             assert proc.returncode==0, f"shell exited {proc.returncode}"
