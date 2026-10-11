@@ -181,7 +181,7 @@ func (a *Model) Ask(ctx context.Context, prompt string) (answer string, turnErr 
 			properties[arg] = map[string]any{"type": "string"}
 			required = append(required, arg)
 		}
-		if c.ID == "k8s.pod.logs" {
+		if c.ID == "provider.kubernetes.pod.logs" {
 			for _, flag := range []string{"previous", "timestamps", "tail", "since", "container"} {
 				properties[flag] = map[string]any{"type": "string", "description": "Optional kubectl logs flag; previous/timestamps accept true or false"}
 			}
