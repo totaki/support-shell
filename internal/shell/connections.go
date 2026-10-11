@@ -25,6 +25,12 @@ func (s *Shell) connectionContext(ctx context.Context) context.Context {
     fmt.Fprintln(os.Stderr,"provider connection:",err)
    }
   }
+  if name:=strings.TrimSpace(os.Getenv("SUPPORT_OPENSTACK_CONNECTION"));name!=""{
+   if err:=s.Connections.Select(ctx,s.Providers,"openstack",name);err!=nil{
+    s.Connections.Clear("openstack")
+    fmt.Fprintln(os.Stderr,"provider connection:",err)
+   }
+  }
  }
  s.syncConnectionLabel()
  return s.Connections.Bind(ctx)
