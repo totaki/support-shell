@@ -6,9 +6,11 @@
 
 [![Go coverage](https://coveralls.io/repos/github/totaki/support-shell/badge.svg?branch=main)](https://coveralls.io/github/totaki/support-shell?branch=main)
 
-Интерактивная консоль поддержки на Go: команды и автодополнение, Kubernetes через локальный kubectl, AI-агент через OpenAI-compatible Chat Completions и расширения Extism/WASM.
+Интерактивная консоль поддержки на Go с архитектурой Provider → Plugin: команды и автодополнение, Kubernetes через локальный kubectl, AI-агент через OpenAI-compatible Chat Completions и расширения Extism/WASM.
 
 **Состояние:** PoC. Изменяющие операции через обычный Executor запрещены. Результаты Kubernetes-инструментов отправляются выбранному LLM-провайдеру — не используйте подключение с доступом к секретам, если не допускается передача этих данных.
+
+**Архитектура:** [провайдеры и capabilities](docs/providers.md). Kubernetes — первый встроенный провайдер; OpenStack, PostgreSQL и Kafka планируются отдельными драйверами. Нативные операции имеют ID `provider.kubernetes.*`, а короткие команды CLI (`k8s pods` и т. д.) остаются интерфейсом пользователя.
 
 ## Локальная конфигурация через .env
 
@@ -71,7 +73,7 @@ make run-plugin
 # В Shell: diagnose k8s kube-system
 ```
 
-Плагин `diagnostics` объявляет `support.shell/v1alpha1`, операции и capabilities. Host разрешает только заявленные read-only вызовы из allowlist. WASM не получает credentials Kubernetes напрямую. Для Extism-сборки нужен `github.com/extism/go-sdk` и его runtime.
+Плагин `diagnostics` объявляет `support.shell/v2alpha1`, операции и capabilities. Host разрешает только заявленные read-only вызовы из allowlist. WASM не получает credentials Kubernetes напрямую. Для Extism-сборки нужен `github.com/extism/go-sdk` и его runtime.
 
 ## Документация
 
