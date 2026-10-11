@@ -110,7 +110,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	}
 	if c, args, ok := s.Registry.Resolve(line); ok {
 		if !s.Registry.Allowed(core.SurfaceCLI, c) { fmt.Fprintln(os.Stderr, "error: tool not permitted in CLI"); return true }
-		if c.ID == "k8s.context.use" {
+		if c.ID == "provider.kubernetes.context.use" {
 			input, err := core.ParseInput(c, args)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "error:", err)
@@ -121,13 +121,13 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 				fmt.Fprintln(os.Stderr, "error: context name required")
 				return true
 			}
-			current, err := s.Registry.Execute(ctx, "k8s.contexts", nil)
+			current, err := s.Registry.Execute(ctx, "provider.kubernetes.contexts", nil)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "error:", err)
 				return true
 			}
 			// Validation of existence happens only on confirmed execution.
-			fmt.Println(indentOutput(s.renderResult("k8s.contexts", current)))
+			fmt.Println(indentOutput(s.renderResult("provider.kubernetes.contexts", current)))
 			fmt.Printf("\nSwitch Kubernetes context:\n  Current: %s\n  Target:  %s\n", currentContextName(current), target)
 			s.PendingContext = target
 			return true
@@ -250,7 +250,7 @@ func (s *Shell) prompt(color bool) string {
 }
 
 func (s *Shell) refreshContext(ctx context.Context) {
-	v, err := s.Registry.Execute(ctx, "k8s.contexts", nil)
+	v, err := s.Registry.Execute(ctx, "provider.kubernetes.contexts", nil)
 	if err != nil {
 		s.CurrentContext = ""
 		return
@@ -641,12 +641,12 @@ func (s *Shell) applyContextDecision(ctx context.Context, decision string) {
 		fmt.Println("Context switch cancelled")
 		return
 	}
-	result, err := s.Registry.ExecuteApproved(ctx, "k8s.context.use", map[string]any{"name": target})
+	result, err := s.Registry.ExecuteApproved(ctx, "provider.kubernetes.context.use", map[string]any{"name": target})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		return
 	}
-	fmt.Println(indentOutput(s.renderResult("k8s.context.use", result)))
+	fmt.Println(indentOutput(s.renderResult("provider.kubernetes.context.use", result)))
 	s.refreshContext(ctx)
 }
 
