@@ -1,0 +1,67 @@
+package shell
+
+import (
+ "context"
+ "fmt"
+ "os"
+ "strings"
+
+ "example.com/support-shell/internal/provider"
+)
+
+func (s *Shell) connectionContext(ctx context.Context) context.Context {
+ if s.Providers==nil{return ctx}
+ if s.Connections==nil{s.Connections=provider.NewSession()}
+ if !s.connectionsInitialized {
+  s.connectionsInitialized=true
+  if err:=s.Connections.SelectDefaults(ctx,s.Providers);err!=nil{
+   // The shell must remain usable when kubectl is unavailable.
+   fmt.Fprintln(os.Stderr,"provider connection discovery:",err)
+  }
+  if name:=strings.TrimSpace(os.Getenv("SUPPORT_KUBERNETES_CONNECTION"));name!=""{
+   if err:=s.Connections.Select(ctx,s.Providers,"kubernetes",name);err!=nil{
+    fmt.Fprintln(os.Stderr,"provider connection:",err)
+   }
+  }
+ }
+ s.syncConnectionLabel()
+ return s.Connections.Bind(ctx)
+}
+
+func (s *Shell) syncConnectionLabel(){
+ s.CurrentContext=""
+ if s.Connections!=nil{
+  if selected:=s.Connections.Current("kubernetes");selected!=""{
+   s.CurrentContext="kubernetes/"+selected
+  }
+ }
+}
+
+func (s *Shell) listConnections(ctx context.Context){
+ if s.Providers==nil{fmt.Println("No provider registry");return}
+ connections,err:=s.Providers.Connections(ctx)
+ if err!=nil{fmt.Fprintln(os.Stderr,"connections:",err);return}
+ if len(connections)==0{fmt.Println("No connections available");return}
+ fmt.Println("CURRENT  CONNECTION")
+ for _,connection:=range connections{
+  marker:=" "
+  if s.Connections!=nil && s.Connections.Current(connection.Provider)==connection.Target {marker="*"}
+  fmt.Printf("  %s      %s\n",marker,connection.QualifiedID())
+ }
+}
+
+func (s *Shell) queueConnection(ctx context.Context,raw string){
+ if s.Providers==nil{fmt.Fprintln(os.Stderr,"connections: no provider registry");return}
+ providerID,id,ok:=strings.Cut(raw,"/")
+ if !ok||providerID==""||id==""{fmt.Fprintln(os.Stderr,"usage: connections use <provider>/<connection>");return}
+ connections,err:=s.Providers.Connections(ctx)
+ if err!=nil{fmt.Fprintln(os.Stderr,"connections:",err);return}
+ for _,c:=range connections{
+  if c.Provider==providerID && c.ID==id{
+   fmt.Printf("Select connection:\n  Current: %s\n  Target:  %s\n",s.CurrentContext,c.QualifiedID())
+   s.PendingContext=c.QualifiedID()
+   return
+  }
+ }
+ fmt.Fprintln(os.Stderr,"unknown connection:",raw)
+}
