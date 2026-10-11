@@ -16,8 +16,11 @@ func (s *Shell) completions(ctx context.Context, prefix string) []string {
  for _,cmd:=range s.Registry.ListFor(core.SurfaceCLI){candidates=append(candidates,cmd.Path)}
  if strings.HasPrefix(prefix,"connections use ") && s.Providers!=nil{
   result:=[]string{}
-  values,err:=s.Providers.Connections(ctx)
-  if err==nil{for _,c:=range values{result=append(result,"connections use "+c.QualifiedID())}}
+  for _,providerID:=range s.Providers.IDs(){
+   values,err:=s.Providers.ConnectionsFor(ctx,providerID)
+   if err!=nil{continue}
+   for _,c:=range values{result=append(result,"connections use "+c.QualifiedID())}
+  }
   return uniqueCompletions(prefix,result)
  }
  if strings.HasPrefix(prefix,"help ") {
