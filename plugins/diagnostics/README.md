@@ -17,7 +17,7 @@ The structured result includes `pod_count`, `problematic_pods`, `warning_events`
 ## Dependencies and permissions
 
 - Extism WASI module with `support-plugin-sdk`.
-- Declared Host capabilities: `k8s.pods`, `k8s.events`.
+- Declared Host capabilities: `provider.kubernetes.pods`, `provider.kubernetes.events`.
 - Host checks both declared capabilities and an explicit read-only allowlist.
 - Both operations use the configured Kubernetes context via the Go Host; their output is one evidence source, not independent corroboration.
 
