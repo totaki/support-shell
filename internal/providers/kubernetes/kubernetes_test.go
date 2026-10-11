@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"example.com/support-shell/internal/core"
+	"example.com/support-shell/internal/provider"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,44 +25,44 @@ esac
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	r := core.NewRegistry()
 	registerForTest(t, r)
-	v, err := r.Execute(context.Background(), "provider.kubernetes.contexts", nil)
+	v, err := r.Execute(provider.WithConnection(context.Background(),"kubernetes","dev"), "provider.kubernetes.contexts", nil)
 	if err != nil || !strings.Contains(v.(string), "dev-cluster") {
 		t.Fatalf("contexts: %v %v", v, err)
 	}
-	_, err = r.Execute(context.Background(), "provider.kubernetes.nodes", nil)
+	_, err = r.Execute(provider.WithConnection(context.Background(),"kubernetes","dev"), "provider.kubernetes.nodes", nil)
 	if err == nil || !strings.Contains(err.Error(), "nodes forbidden") || strings.Contains(err.Error(), `"items"`) {
 		t.Fatalf("error details not isolated: %v", err)
 	}
 }
 
-func TestContextCompletionAndApproval(t *testing.T) {
-	dir := t.TempDir()
-	script := `#!/bin/sh
+func TestSessionContextSelectionWithoutKubeconfigMutation(t *testing.T) {
+ dir:=t.TempDir()
+ script:=`#!/bin/sh
 case "$*" in
- "config view -o=json") echo '{"current-context":"dev","contexts":[{"name":"dev","context":{"cluster":"dev-c"}},{"name":"prod","context":{"cluster":"prod-c"}}]}' ;;
- "config use-context prod") echo prod > "` + dir + `/switched" ;;
- *) exit 10 ;;
+ "config view -o=json") echo '{"current-context":"dev","contexts":[{"name":"dev","context":{"cluster":"dev"}},{"name":"prod","context":{"cluster":"prod"}}]}' ;;
+ "--context prod get nodes -o json") echo '{"items":[{"metadata":{"name":"prod-node"}}]}' ;;
+ "--context dev get nodes -o json") echo '{"items":[{"metadata":{"name":"dev-node"}}]}' ;;
+ *) echo "unexpected $*" >&2; exit 12 ;;
 esac
 `
-	if err := os.WriteFile(filepath.Join(dir, "kubectl"), []byte(script), 0700); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-	r := core.NewRegistry()
-	registerForTest(t, r)
-	matches := r.CompleteWithContext(context.Background(), "k8s context use pr")
-	if len(matches) != 1 || matches[0] != "k8s context use prod" {
-		t.Fatalf("completion: %v", matches)
-	}
-	_, err := r.Execute(context.Background(), "provider.kubernetes.context.use", map[string]any{"name": "prod"})
-	if err == nil {
-		t.Fatal("unapproved switch was allowed")
-	}
-	if _, err = os.Stat(filepath.Join(dir, "switched")); !os.IsNotExist(err) {
-		t.Fatal("side effect before approval")
-	}
-	result, err := r.ExecuteApproved(context.Background(), "provider.kubernetes.context.use", map[string]any{"name": "prod"})
-	if err != nil || !strings.Contains(result.(string), "prod") {
-		t.Fatalf("approved switch: %v %v", result, err)
-	}
+ if err:=os.WriteFile(filepath.Join(dir,"kubectl"),[]byte(script),0700);err!=nil{t.Fatal(err)}
+ t.Setenv("PATH",dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+ r:=core.NewRegistry()
+ registerForTest(t,r)
+ providers:=provider.NewRegistry()
+ if err:=providers.Register(New());err!=nil{t.Fatal(err)}
+ session:=provider.NewSession()
+ if err:=session.SelectDefaults(context.Background(),providers);err!=nil{t.Fatal(err)}
+ if got:=session.Current("kubernetes");got!="dev"{t.Fatalf("initial context=%q",got)}
+ if err:=session.Select(context.Background(),providers,"kubernetes","prod");err!=nil{t.Fatal(err)}
+ if got:=session.Current("kubernetes");got!="prod"{t.Fatalf("selected context=%q",got)}
+ result,err:=r.Execute(session.Bind(context.Background()),"provider.kubernetes.nodes",nil)
+ if err!=nil||!strings.Contains(core.JSON(result),"prod-node"){t.Fatalf("result=%v err=%v",result,err)}
+ other:=provider.NewSession()
+ if err:=other.SelectDefaults(context.Background(),providers);err!=nil{t.Fatal(err)}
+ result,err=r.Execute(other.Bind(context.Background()),"provider.kubernetes.nodes",nil)
+ if err!=nil||!strings.Contains(core.JSON(result),"dev-node"){t.Fatalf("other session=%v err=%v",result,err)}
+ raw,err:=os.ReadFile(filepath.Join(dir,"kubectl"))
+ if err!=nil{t.Fatal(err)}
+ if strings.Contains(string(raw),"use-context"){t.Fatal("fake expects no kubeconfig mutation")}
 }
