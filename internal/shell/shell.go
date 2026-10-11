@@ -69,7 +69,7 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
 	case "quit", "exit":
 		return false
 	case "help":
-		fmt.Println("Built-in: help, commands, connections, connections use <provider>/<name>, tools permissions, history, set format table|json, help <command>, report, report save, agent reset, exit")
+		fmt.Println("Built-in: help, commands, ctx, connections, connections use <provider>/<name>, tools permissions, history, set format table|json, help <command>, report, report save, agent reset, exit")
 		for _, c := range s.Registry.ListFor(core.SurfaceCLI) {
 			fmt.Printf("  %-24s %s\n", c.Path, c.Description)
 		}
@@ -81,6 +81,9 @@ func (s *Shell) Handle(ctx context.Context, line string) bool {
             fmt.Printf("%-29s %-12s %-12s %s\n",c.ID,state(core.SurfaceCLI),state(core.SurfaceAgent),state(core.SurfaceMCP))
         }
         return true
+	case "ctx":
+		s.printActiveConnections()
+		return true
 	case "connections":
   s.listConnections(ctx)
   return true
@@ -232,10 +235,7 @@ func colorsEnabled() bool {
 	return os.Getenv("NO_COLOR") == "" && os.Getenv("TERM") != "dumb" && os.Getenv("CLICOLOR") != "0"
 }
 func (s *Shell) prompt(color bool) string {
-	name := "support"
-	if s.CurrentContext != "" && s.CurrentContext != "(unknown)" {
-		name += ":" + s.CurrentContext
-	}
+	const name = "support"
 	if color {
 		return blue + name + reset + " " + green + "❯" + reset + " "
 	}
