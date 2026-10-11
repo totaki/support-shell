@@ -6,6 +6,7 @@ import (
 	"example.com/support-shell/internal/core"
 	"example.com/support-shell/internal/provider"
 	"example.com/support-shell/internal/providers/kubernetes"
+	"example.com/support-shell/internal/providers/openstack"
 	"example.com/support-shell/internal/mcp"
 	"example.com/support-shell/internal/pluginmanager"
 	"example.com/support-shell/internal/shell"
@@ -23,6 +24,7 @@ func main() {
 	if err := configureToolPolicy(r); err != nil { fmt.Fprintln(os.Stderr, "tool policy:", err); os.Exit(1) }
 	providers := provider.NewRegistry()
 	if err := providers.Register(kubernetes.New()); err != nil { fmt.Fprintln(os.Stderr,"provider:",err);os.Exit(1) }
+	if err := providers.Register(openstack.New()); err != nil { fmt.Fprintln(os.Stderr,"provider:",err);os.Exit(1) }
 	if err := providers.BindTools(r); err != nil { fmt.Fprintln(os.Stderr,"provider tools:",err);os.Exit(1) }
 	manager := pluginmanager.New()
 	if err := manager.Register(r); err != nil { fmt.Fprintln(os.Stderr, "plugin manager:", err); os.Exit(1) }
@@ -38,6 +40,9 @@ func main() {
   }
   if selected:=strings.TrimSpace(os.Getenv("SUPPORT_KUBERNETES_CONNECTION"));selected!=""{
    if err:=session.Select(ctx,providers,"kubernetes",selected);err!=nil{fmt.Fprintln(os.Stderr,"provider connection:",err);os.Exit(1)}
+  }
+  if selected:=strings.TrimSpace(os.Getenv("SUPPORT_OPENSTACK_CONNECTION"));selected!=""{
+   if err:=session.Select(ctx,providers,"openstack",selected);err!=nil{fmt.Fprintln(os.Stderr,"provider connection:",err);os.Exit(1)}
   }
   if err := (&mcp.Server{Registry:r}).Serve(session.Bind(ctx),os.Stdin,os.Stdout);err!=nil {
 			fmt.Fprintln(os.Stderr,"mcp:",err)
