@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	if err := loadDotEnv(".env"); err != nil { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
 	command := flag.String("command", "", "execute one command and exit")
 	flag.Parse()
 	r := core.NewRegistry()
