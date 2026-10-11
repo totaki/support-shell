@@ -66,3 +66,11 @@ esac
  if err!=nil{t.Fatal(err)}
  if strings.Contains(string(raw),"use-context"){t.Fatal("fake expects no kubeconfig mutation")}
 }
+
+func TestKubernetesOperationsRequireSelectedConnection(t *testing.T){
+ r:=core.NewRegistry()
+ registerForTest(t,r)
+ if _,err:=r.Execute(context.Background(),"provider.kubernetes.nodes",nil);err==nil || !strings.Contains(err.Error(),"no active Kubernetes connection"){
+  t.Fatalf("operation was not rejected without connection: %v",err)
+ }
+}
