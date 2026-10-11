@@ -29,7 +29,6 @@ func New() *provider.Catalog {
 		{"provider.kubernetes.pod.describe", "k8s pod describe", "describe pod", []string{"namespace", "pod"}},
 		{"provider.kubernetes.pod.logs", "k8s pod logs", "logs", []string{"namespace", "pod"}},
 	}
-	registerContexts(r)
 	registerPodDiagnostics(r)
 	for _, entry := range entries {
 		e := entry
