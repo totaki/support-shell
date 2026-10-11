@@ -9,8 +9,8 @@ import (
 func TestCompletionsBuiltinAndRegistry(t *testing.T){
  r:=core.NewRegistry()
  for _,c:=range []core.Command{
-  {ID:"k8s.nodes",Path:"k8s nodes",Risk:"read"},
-  {ID:"k8s.pods",Path:"k8s pods",Risk:"read"},
+  {ID:"provider.kubernetes.nodes",Path:"k8s nodes",Risk:"read"},
+  {ID:"provider.kubernetes.pods",Path:"k8s pods",Risk:"read"},
   {ID:"plugins.info",Path:"plugins info",Risk:"read",Completer:func(_ context.Context,p string)[]string{
    return []string{"plugins info diagnostics","plugins info network"}
   }},
