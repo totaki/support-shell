@@ -9,7 +9,7 @@ func TestPluginFormats(t *testing.T){
  s:=&Shell{}
  value:=map[string]any{"plugins":[]map[string]any{{
   "name":"network","version":"0.1.0","status":"loaded","commands":[]any{map[string]any{"id":"network.nodes"}},
-  "capabilities":[]any{"k8s.nodes"},
+  "capabilities":[]any{"provider.kubernetes.nodes"},
  }}}
  // JSON normalization mirrors the typed manager response.
  a:=s.renderResult("plugins.list",value)
@@ -21,7 +21,7 @@ func TestPluginFormats(t *testing.T){
 
 func TestPluginInfoReadable(t *testing.T){
  s:=&Shell{}
- detail:=map[string]any{"name":"network","version":"0.1.0","status":"loaded","path":"/plugins/network.wasm","apiVersion":"support.shell/v1alpha1","capabilities":[]any{"k8s.nodes"},"commands":[]any{map[string]any{"path":"network nodes","id":"network.k8s.nodes","risk":"read"}}}
+ detail:=map[string]any{"name":"network","version":"0.1.0","status":"loaded","path":"/plugins/network.wasm","apiVersion":"support.shell/v1alpha1","capabilities":[]any{"provider.kubernetes.nodes"},"commands":[]any{map[string]any{"path":"network nodes","id":"network.provider.kubernetes.nodes","risk":"read"}}}
  output:=s.renderResult("plugins.info",detail)
  if !strings.Contains(output,"Name: network")||!strings.Contains(output,"network nodes"){t.Fatalf("unexpected: %s",output)}
 }
