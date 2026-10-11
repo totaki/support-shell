@@ -1,17 +1,16 @@
-# Plugin API (v1alpha1)
+# Plugin API (v2alpha1)
 
-The `pkg/pluginapi` package defines versioned, JSON-serializable descriptions of Support Shell extensions.
-
-The Extism loader now validates `describe()` with `Manifest.Validate()` before registering any command. The diagnostics Rust plugin has migrated to the new format.
+The `pkg/pluginapi` package defines the JSON wire contract for Extism/WASM plugins.
+Version `support.shell/v2alpha1` is intentionally incompatible with v1alpha1.
 
 ## describe() example
 
 ```json
 {
-  "apiVersion": "support.shell/v1alpha1",
+  "apiVersion": "support.shell/v2alpha1",
   "name": "diagnostics",
   "version": "0.1.0",
-  "capabilities": ["k8s.pods", "k8s.events"],
+  "capabilities": ["provider.kubernetes.pods", "provider.kubernetes.events"],
   "commands": [{
     "id": "diagnostics.k8s.inspect",
     "path": "diagnose k8s",
@@ -22,19 +21,27 @@ The Extism loader now validates `describe()` with `Manifest.Validate()` before r
 }
 ```
 
-The `capabilities` list is **not** automatic authorization. Extism Host calls are permitted only when the command is both requested in the manifest and present in the Host's hard-coded read-only allowlist. Unsupported capabilities cause plugin loading to fail.
+Capabilities refer to operations in the **Provider Registry**, not arbitrary CLI commands.
+The host checks that every requested capability exists and is read-only. A plugin may call only
+capabilities declared in its own manifest. Input is validated before provider execution.
+Unknown or mutating capabilities are rejected; no direct infrastructure credentials or Core
+Executor handle is passed to the WASM guest.
 
-The legacy manifest without `apiVersion`, `version`, and `capabilities` is no longer accepted. Rebuild the diagnostics WASM plugin after updating.
+The plugin exports `describe()` and `execute()` through the Extism PDK. The host request
+contains a capability ID and JSON input. Results are JSON. Plugins implement domain-specific
+analysis and orchestration; provider drivers implement infrastructure APIs and connection logic.
 
-`Request` and `Result` types are transport-neutral. The existing `execute()` response remains a raw JSON value, not yet wrapped in `Result`, to preserve compatibility with Shell/Agent.
+The `plugins/sdk` Rust crate has the same `v2alpha1` manifest version. Rebuild each WASM
+artifact after updating the SDK. Existing binaries are not automatically migrated.
 
 ## Testing
 
 ```bash
+rustup target add wasm32-wasip1
 go test ./...
-go vet ./...
 make plugin
-make run-plugin
+make test-e2e
 ```
 
-GitHub Actions runs Go tests/race/vet and compiles the Rust WASM example. Full Extism Host integration still requires an end-to-end run with the Extism-tagged binary.
+The E2E suite runs the actual Extism host with a WASM fixture and MCP adapter. Access to a real
+Kubernetes installation is not required for the fixture tests.
