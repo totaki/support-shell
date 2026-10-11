@@ -67,6 +67,15 @@ type Session struct {
  selected map[string]string
 }
 func NewSession()*Session{return &Session{selected:map[string]string{}}}
+func(s *Session) Clear(providerID string){
+ s.mu.Lock();delete(s.selected,providerID);s.mu.Unlock()
+}
+func(s *Session) Selected() map[string]string{
+ s.mu.RLock();defer s.mu.RUnlock()
+ out:=map[string]string{}
+ for key,value:=range s.selected {out[key]=value}
+ return out
+}
 func(s *Session) Current(providerID string)string{
  s.mu.RLock();defer s.mu.RUnlock()
  return s.selected[providerID]
