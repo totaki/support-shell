@@ -109,6 +109,28 @@ func(r *Registry) ExecuteRead(ctx context.Context,id string,in map[string]any)(a
 // BindTools publishes provider operations to CLI, MCP and Agent through the
 // regular Core policy and approval checks. The plugin host never calls this layer.
 func(r *Registry) BindTools(to *core.Registry)error{
+ if err:=to.Add(core.Command{
+  ID:"providers.list",Path:"providers",Risk:"read",
+  Description:"List registered infrastructure providers",
+  Handler:func(context.Context,map[string]any)(any,error){
+   result:=[]map[string]any{}
+   for _,id:=range r.IDs(){
+    count:=0
+    for _,operation:=range r.Operations(){if strings.HasPrefix(operation.ID,"provider."+id+"."){count++}}
+    result=append(result,map[string]any{"id":id,"operations":count})
+   }
+   return result,nil
+  },
+ });err!=nil{return err}
+ if err:=to.Add(core.Command{
+  ID:"providers.capabilities",Path:"providers capabilities",Risk:"read",
+  Description:"Show capabilities exported by infrastructure providers",
+  Handler:func(context.Context,map[string]any)(any,error){
+   result:=[]map[string]any{}
+   for _,o:=range r.Operations(){result=append(result,map[string]any{"id":o.ID,"path":o.Path,"risk":o.Risk})}
+   return result,nil
+  },
+ });err!=nil{return err}
  for _,op:=range r.Operations(){
   o:=op
   command:=core.Command{ID:o.ID,Path:o.Path,Description:o.Description,Risk:o.Risk,Args:o.Args,InputSchema:o.InputSchema,OutputSchema:o.OutputSchema,Examples:o.Examples,Completer:o.Completer,Handler:o.Handler}
