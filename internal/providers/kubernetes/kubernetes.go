@@ -13,9 +13,10 @@ import (
 	"time"
 )
 
-// Kubernetes integration uses kubectl's configured authentication; WASM plugins never invoke it directly.
+// Kubernetes uses explicit per-session kubeconfig contexts; WASM never receives credentials.
 func New() *provider.Catalog {
 	r := provider.NewCatalog("kubernetes")
+	r.SetConnectionDiscovery(discoverConnections)
 	entries := []struct {
 		id, path, resource string
 		args               []string
@@ -92,6 +93,8 @@ func New() *provider.Catalog {
 					}
 				}
 			}
+			argv, err := withKubeContext(ctx, argv)
+			if err != nil { return nil, err }
 			cmd := exec.CommandContext(t, "kubectl", argv...)
 			var stdout, stderr bytes.Buffer
 			cmd.Stdout = &stdout
@@ -136,15 +139,23 @@ type kubeView struct {
 	Contexts []contextView `json:"contexts"`
 }
 
+func withKubeContext(ctx context.Context, argv []string)([]string,error){
+ if len(argv)>0 && argv[0]=="config" {return argv,nil}
+ selected,ok:=provider.ConnectionFromContext(ctx,"kubernetes")
+ if !ok {return nil,fmt.Errorf("no active Kubernetes connection; choose one with connections use kubernetes/<name>")}
+ return append([]string{"--context",selected},argv...),nil
+}
 func runKubectl(ctx context.Context, args ...string) ([]byte, error) {
-	t, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(t, "kubectl", args...)
+ t, cancel := context.WithTimeout(ctx, 10*time.Second)
+ defer cancel()
+ argv,err:=withKubeContext(ctx,args)
+ if err!=nil{return nil,err}
+ cmd := exec.CommandContext(t,"kubectl",argv...)
 	var errBuf bytes.Buffer
 	cmd.Stderr = &errBuf
 	b, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("kubectl %s: %s", strings.Join(args, " "), strings.TrimSpace(errBuf.String()))
+		return nil, fmt.Errorf("kubectl %s: %s", strings.Join(argv, " "), strings.TrimSpace(errBuf.String()))
 	}
 	if len(b) > 1024*1024 {
 		return nil, fmt.Errorf("kubectl output too large")
@@ -171,6 +182,7 @@ func contextTable(ctx context.Context) (string, error) {
 	if len(v.Contexts) == 0 {
 		return "No Kubernetes contexts found", nil
 	}
+	if selected,ok:=provider.ConnectionFromContext(ctx,"kubernetes");ok{v.Current=selected}
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 0, 3, ' ', 0)
 	fmt.Fprintln(w, "CURRENT\tNAME\tCLUSTER\tNAMESPACE")
@@ -188,52 +200,14 @@ func contextTable(ctx context.Context) (string, error) {
 	_ = w.Flush()
 	return strings.TrimSuffix(buf.String(), "\n"), nil
 }
-func registerContexts(r *provider.Catalog) {
-	_ = r.Add(provider.Operation{ID: "provider.kubernetes.context.use", Path: "k8s context use", Description: "Switch active kubeconfig context (confirmation required)", Risk: "write", Args: []string{"name"},
-		Completer: func(ctx context.Context, prefix string) []string {
-			v, err := loadContexts(ctx)
-			if err != nil {
-				return nil
-			}
-			var matches []string
-			for _, c := range v.Contexts {
-				if strings.HasPrefix(c.Name, prefix) {
-					matches = append(matches, "k8s context use "+c.Name)
-				}
-			}
-			return matches
-		},
-		Handler: func(ctx context.Context, in map[string]any) (any, error) {
-			target, _ := in["name"].(string)
-			if target == "" {
-				return nil, fmt.Errorf("context name required")
-			}
-			v, err := loadContexts(ctx)
-			if err != nil {
-				return nil, err
-			}
-			found := false
-			for _, c := range v.Contexts {
-				if c.Name == target {
-					found = true
-					break
-				}
-			}
-			if !found {
-				return nil, fmt.Errorf("unknown context %q", target)
-			}
-			if target == v.Current {
-				return "Already using context: " + target, nil
-			}
-			_, err = runKubectl(ctx, "config", "use-context", target)
-			if err != nil {
-				return nil, err
-			}
-			return "Switched context: " + v.Current + " → " + target, nil
-		},
-	})
-	// Alias to keep singular and plural discoverable.
-	_ = r.Add(provider.Operation{ID: "provider.kubernetes.contexts.alias", Path: "k8s context list", Description: "List contexts in a table", Risk: "read", Handler: func(ctx context.Context, _ map[string]any) (any, error) { return contextTable(ctx) }})
+func discoverConnections(ctx context.Context)([]provider.Connection,error){
+ v,err:=loadContexts(ctx)
+ if err!=nil{return nil,err}
+ connections:=make([]provider.Connection,0,len(v.Contexts))
+ for _,c:=range v.Contexts{
+  connections=append(connections,provider.Connection{Provider:"kubernetes",ID:c.Name,Target:c.Name,Default:c.Name==v.Current})
+ }
+ return connections,nil
 }
 
 // Completion uses bounded, read-only kubectl calls; errors simply yield no suggestions.
