@@ -40,3 +40,17 @@ func TestConnectionContextSnapshotDoesNotLeakAcrossProviders(t *testing.T){
  if name,ok:=ConnectionFromContext(b,"kubernetes");!ok||name!="dev"{t.Fatalf("lost Kubernetes selection: %q",name)}
  if name,ok:=ConnectionFromContext(b,"postgres");!ok||name!="local"{t.Fatalf("lost PostgreSQL selection: %q",name)}
 }
+
+func TestConnectionIDsWithSlashes(t *testing.T){
+ catalog:=NewCatalog("kubernetes")
+ target:="arn:aws:eks:eu-west-1:123456789:cluster/production"
+ catalog.SetConnectionDiscovery(func(context.Context)([]Connection,error){
+  return []Connection{{Provider:"kubernetes",ID:target,Target:target,Default:true}},nil
+ })
+ _=catalog.Add(Operation{ID:"provider.kubernetes.test",Path:"k8s test",Risk:"read",Handler:func(context.Context,map[string]any)(any,error){return nil,nil}})
+ registry:=NewRegistry()
+ if err:=registry.Register(catalog);err!=nil{t.Fatal(err)}
+ session:=NewSession()
+ if err:=session.Select(context.Background(),registry,"kubernetes",target);err!=nil{t.Fatal(err)}
+ if got:=session.Current("kubernetes");got!=target{t.Fatalf("got %q",got)}
+}
