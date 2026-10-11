@@ -68,13 +68,13 @@ mod tests {
     use super::*;
     #[test]
     fn manifest_and_request_wire_contract() {
-        let m = Manifest::new("sample","0.1.0",&["k8s.nodes"],
+        let m = Manifest::new("sample","0.1.0",&["provider.kubernetes.nodes"],
             vec![Command::read("sample.nodes","sample nodes","List nodes",&[])]);
         let v = serde_json::to_value(m).unwrap();
         assert_eq!(v["apiVersion"], API_VERSION);
         assert_eq!(v["commands"][0]["risk"], "read");
         let req = Request::parse(r#"{"command":"sample.nodes","input":{}}"#).unwrap();
         assert_eq!(req.command, "sample.nodes");
-        assert_eq!(serde_json::from_str::<Value>(&host_request("k8s.nodes", serde_json::json!({}))).unwrap()["command"],"k8s.nodes");
+        assert_eq!(serde_json::from_str::<Value>(&host_request("provider.kubernetes.nodes", serde_json::json!({}))).unwrap()["command"],"provider.kubernetes.nodes");
     }
 }
