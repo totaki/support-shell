@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"example.com/support-shell/internal/core"
+	"example.com/support-shell/internal/provider"
 	"example.com/support-shell/pkg/pluginapi"
 	"example.com/support-shell/internal/pluginmanager"
 	"fmt"
@@ -20,7 +21,7 @@ import (
 )
 
 
-func loadPlugins(r *core.Registry, manager *pluginmanager.Manager) error {
+func loadPlugins(r *core.Registry, providers *provider.Registry, manager *pluginmanager.Manager) error {
     // PLUGIN_PATH is a directory, a WASM file, or a comma-separated list.
     source := strings.TrimSpace(os.Getenv("PLUGIN_PATH"))
     if source == "" {
@@ -60,14 +61,14 @@ func loadPlugins(r *core.Registry, manager *pluginmanager.Manager) error {
     }
     sort.Strings(files)
     for _, path := range files {
-        if err := loadSinglePlugin(r, manager, path, seenNames); err != nil {
+        if err := loadSinglePlugin(r, providers, manager, path, seenNames); err != nil {
             return fmt.Errorf("load WASM plugin %s: %w", path, err)
         }
     }
     return nil
 }
 
-func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path string, seenNames map[string]bool) error {
+func loadSinglePlugin(r *core.Registry, providers *provider.Registry, manager *pluginmanager.Manager, path string, seenNames map[string]bool) error {
 	// Each plugin has an independent, manifest-scoped capability set.
 	// The host function is restricted to read-only built-in commands.
 	var granted map[string]bool
@@ -84,10 +85,10 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 		if err = json.Unmarshal(raw, &req); err != nil {
 			return
 		}
-		if !granted[req.Command] || !allowedPluginCall(req.Command) {
+		if !granted[req.Command] || !providers.Readable(req.Command) {
 			return
 		}
-		result, err := r.Execute(ctx, req.Command, req.Input)
+		result, err := providers.ExecuteRead(ctx, req.Command, req.Input)
 		var out []byte
 		if err != nil {
 			out, _ = json.Marshal(map[string]string{"error": err.Error()})
@@ -123,7 +124,7 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
     seenNames[d.Name] = true
 	granted = make(map[string]bool, len(d.Capabilities))
 	for _, capability := range d.Capabilities {
-		if !allowedPluginCall(capability) {
+		if !providers.Readable(capability) {
 			return fmt.Errorf("plugin %s requests forbidden capability %q", d.Name, capability)
 		}
 		granted[capability] = true
@@ -167,15 +168,6 @@ func loadSinglePlugin(r *core.Registry, manager *pluginmanager.Manager, path str
 		}
 	}
 	return manager.Add(path, d)
-}
-
-// Only explicit, read-only commands may be invoked from WASM.
-func allowedPluginCall(id string) bool {
-	switch id {
-	case "k8s.pods", "k8s.events", "k8s.pod.describe", "k8s.pod.logs", "k8s.nodes", "k8s.namespaces", "k8s.contexts", "k8s.pod.restarts", "k8s.node.describe", "k8s.top.nodes", "k8s.top.pods":
-		return true
-	}
-	return false
 }
 
 // A bounded timeout keeps runaway guests from monopolizing the shell.
