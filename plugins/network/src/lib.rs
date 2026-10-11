@@ -14,7 +14,7 @@ fn read_tool(id: &str, input: Value) -> FnResult<Value> {
 #[plugin_fn]
 pub fn describe(_: String) -> FnResult<String> {
     Ok(serde_json::to_string(&{ let mut manifest = Manifest::new(
-        "network", "0.1.0", &["k8s.nodes"],
+        "network", "0.1.0", &["provider.kubernetes.nodes"],
         vec![Command::read("network.k8s.nodes", "network nodes",
             "Summarize Kubernetes node addresses and readiness via read-only Host API", &[]),
              Command::read("network.k8s.health", "network health",
@@ -40,7 +40,7 @@ pub fn execute(input: String) -> FnResult<String> {
     if req.command != "network.k8s.nodes" && req.command != "network.k8s.health" {
         return Ok(json!({"error":"unknown command"}).to_string());
     }
-    let nodes = read_tool("k8s.nodes", json!({}))?;
+    let nodes = read_tool("provider.kubernetes.nodes", json!({}))?;
     if let Some(error) = nodes.get("error") {
         return Ok(json!({"error":error}).to_string());
     }
@@ -57,7 +57,7 @@ pub fn execute(input: String) -> FnResult<String> {
             json!({"name":node.pointer("/metadata/name"),"addresses": addresses,
                 "conditions":conditions})
         }).collect()).unwrap_or_default();
-    Ok(json!({"source":"k8s.nodes","count":items.len(),"nodes":items}).to_string())
+    Ok(json!({"source":"provider.kubernetes.nodes","count":items.len(),"nodes":items}).to_string())
 }
 
 #[plugin_fn]
