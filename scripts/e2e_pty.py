@@ -97,7 +97,7 @@ else:
             expect("Selected connection: kubernetes/test")
             expect("support:kubernetes/test")
             assert state.read_text()=="dev", "connection selection mutated kubeconfig"
-            send(b"k8s nodes\\r")
+            send(b"k8s nodes\r")
             expect("test-node")
             send(b"exit\r")
             proc.wait(timeout=5)
