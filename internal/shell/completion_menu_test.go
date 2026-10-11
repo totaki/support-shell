@@ -24,6 +24,9 @@ func TestCompletionSelection(t *testing.T) {
 			if got != tc.want || ok != tc.ok {
 				t.Fatalf("got %q,%v expected %q,%v", got, ok, tc.want, tc.ok)
 			}
+            if tc.name == "down" && !strings.Contains(out.String(), "\r\x1b[3A") {
+                t.Fatalf("repaint must start at first menu row, not prompt: %q", out.String())
+            }
 		})
 	}
 }
