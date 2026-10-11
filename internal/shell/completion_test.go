@@ -21,6 +21,7 @@ func TestCompletionsBuiltinAndRegistry(t *testing.T){
  s:=Shell{Registry:r}
  cases:=[]struct{prefix,want string}{
   {"he","help"},
+  {"ctx","ctx"},
   {"help ","help k8s nodes"},
   {"help k8s n","help k8s nodes"},
   {"set f","set format json"},
