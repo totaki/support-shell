@@ -102,7 +102,7 @@ The plugin exports `describe`, `execute`, `complete`. Its host callback may call
 k8s contexts             # current context, name, cluster, namespace as a table
 k8s context list         # alias
 connections use kubernetes/<name>   # switch this Shell session, prompts Apply? [y/N]
-Answer y + Enter to apply, or press Enter to cancel; the current Kubernetes context appears in the prompt
+Answer y + Enter to apply, or press Enter to cancel; the prompt stays `support ❯`, and `ctx` shows the active provider connections
 ```
 
 `Tab` completes `connections use kubernetes/<name>` from the local kubeconfig. Connection selection only affects this Support Shell session; no `kubectl config use-context` is executed. Provider calls use an explicit `--context`, including tool calls made by the AI agent. The Agent conversation is reset after switching connections.
@@ -173,7 +173,7 @@ Read-only tool outputs are capped at 6,000 Unicode characters **per tool respons
 - `SUPPORT_AGENT_MAX_CALLS` (default 16, 1..100) limits tool calls **per question**.
 - `SUPPORT_AGENT_MAX_ROUNDS` (default 8, 1..20) limits LLM rounds per question.
 - Model prompt distinguishes verified observations from hypotheses and encourages checking identified anomalies. This is guidance, not guaranteed autonomous verification.
-- Selected kubeconfig context is included in model prompt. Every actual `kubectl` request still uses current kubeconfig.
+- Selected kubeconfig context is included in model prompt. Every actual `kubectl` request explicitly specifies the session-selected kubeconfig context via `--context`.
 - `agent reset` clears both conversation and last report.
 
 Agent uses read-only registry tools; Kubernetes API credentials never go into a WASM plugin.
