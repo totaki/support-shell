@@ -633,6 +633,7 @@ func (s *Shell) applyContextDecision(ctx context.Context, decision string) {
   return
  }
  s.syncConnectionLabel()
+ if resetter,ok:=s.Agent.(interface{Reset()});ok{resetter.Reset()}
  fmt.Println("Selected connection:",s.CurrentContext)
 }
 
