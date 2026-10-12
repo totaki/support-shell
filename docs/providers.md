@@ -24,7 +24,7 @@ Providers do not implement incident runbooks or AI decisions.
 
 The first provider is `kubernetes`, implemented in `internal/providers/kubernetes`.
 Its public operations have IDs like `provider.kubernetes.pods`, `provider.kubernetes.events`,
-`provider.kubernetes.nodes` and `provider.kubernetes.context.use`.
+`provider.kubernetes.nodes`. Connection selection is handled by the Shell session, not a provider mutation capability.
 CLI paths remain ergonomic (`k8s pods`, `k8s nodes`) and are not stable API identifiers.
 
 `internal/provider` defines `Provider`, `Operation`, `Catalog` and `Registry`.
