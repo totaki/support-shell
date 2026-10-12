@@ -1,5 +1,7 @@
 # Support Shell — runnable reference implementation
 
+> **New agent / maintainer:** read [PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md) and [AGENTS.md](AGENTS.md) **first**. This project is a research PoC, not an established support product. The sections below include historical development notes; the linked context and current code take precedence.
+
 [![CI](https://github.com/totaki/support-shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/totaki/support-shell/actions/workflows/ci.yml)
 **MVP release baseline:** [v0.1.0 changelog](CHANGELOG.md) · [Release instructions](docs/releases.md). The Git tag and release must be published separately.
 
@@ -25,7 +27,7 @@ Requirements: Go 1.23+, `stty` (macOS/Linux) for raw terminal editing; `kubectl`
 ```sh
 make test
 make run
-# or go run ./cmd/support --command 'clusters'
+# or go run ./cmd/support --command 'providers'
 ```
 
 Sample commands:
@@ -33,8 +35,9 @@ Sample commands:
 ```
 help
 commands
-clusters
-cluster health prod-01
+providers
+ctx
+connections
 k8s contexts
 k8s nodes
 k8s pods default
@@ -46,9 +49,9 @@ agent reset
 exit
 ```
 
-`clusters` and `cluster health` are simulated data. `k8s ...` commands are real *read-only* invocations of `kubectl` with the current kubeconfig. There is no shell command substitution, and `kubectl` is executed without invoking a system shell. External credentials are provided only to the trusted Go module, not the WASM plugin. Read operations may still retrieve sensitive information, so use a least-privilege kubeconfig.
+`k8s ...` commands perform real *read-only* `kubectl` calls with an explicit session-selected kubeconfig context. OpenStack is a second built-in provider using `python-openstackclient`. There is no shell command substitution, and `kubectl` is executed without invoking a system shell. External credentials are provided only to the trusted Go module, not the WASM plugin. Read operations may still retrieve sensitive information, so use a least-privilege kubeconfig.
 
-Shell editing: `↑↓` history, `←→` cursor movement, `Tab` command/resource completion, `Ctrl+A/E` Home/End, `Ctrl+R` reverse history search, `Backspace/Delete`, `Ctrl+C` exit. Colors are disabled by `NO_COLOR=1`. History is persisted under the user's configuration directory (usually `~/.config/support-shell/history` on Linux); do not enter secrets as commands.
+Shell editing: `↑↓` history, `←→` cursor movement, `Tab` command/resource completion, `Ctrl+A/E` Home/End, `Ctrl+R` reverse history search, `Backspace/Delete`, `Ctrl+C` cancels editing or running commands (use `exit` to leave the shell). Colors are disabled by `NO_COLOR=1`. History is persisted under the user's configuration directory (usually `~/.config/support-shell/history` on Linux); do not enter secrets as commands.
 
 ## Agent configuration
 
@@ -80,7 +83,7 @@ The plugin exports `describe`, `execute`, `complete`. Its host callback may call
 ## Architecture
 
 - `internal/core`: registry, command descriptors, input parser, read-only executor.
-- `internal/modules`: demo + real Kubernetes `kubectl` adapter.
+- `internal/provider`: provider registry and session-scoped connections; `internal/providers/kubernetes` and `internal/providers/openstack`: built-in read-only drivers.
 - `internal/shell`: interactive ANSI REPL, input editor, history, agent fallback.
 - `internal/agent`: OpenAI-compatible Chat Completions client, tool calls, conversation.
 - `cmd/support/plugins_extism.go`: optional Extism host adapter behind Go build tag `extism`.
@@ -89,10 +92,10 @@ The plugin exports `describe`, `execute`, `complete`. Its host callback may call
 ## Current limitations (intentional)
 
 - Mutation is denied, including direct shell commands. Safe approvals, RBAC and audit trail must be designed before allowing destructive changes.
-- WASM build and end-to-end invocation are not reverified in this build environment (Cargo and Extism SDK unavailable here); previous end-to-end tests were performed by the user.
+- CI includes Rust/WASM and MCP end-to-end tests; real Kubernetes/OpenStack integration and production security are not verified by CI.
 - Kubernetes completions resolve namespaces and pod names dynamically using bounded read-only kubectl calls. An interactive completion menu is available.
 - Commands have positional arguments and simple `--name=value` flags but not a full declarative JSON Schema / quoted-argument parser.
-- No MCP server transport yet. The command registry is ready for an adapter but MCP isn't implemented.
+- MCP stdio server exists (`support mcp serve`), but no per-client remote auth, HTTP transport or dynamic connection selection.
 - The agent uses the current Registry and conversation, but it does not automatically receive complete prior direct-shell command outputs. Full shared session context is a future extension.
 - Shell's editor relies on `stty` and isn't a cross-platform terminal abstraction.
 
@@ -100,7 +103,6 @@ The plugin exports `describe`, `execute`, `complete`. Its host callback may call
 
 ```text
 k8s contexts             # current context, name, cluster, namespace as a table
-k8s context list         # alias
 connections use kubernetes/<name>   # switch this Shell session, prompts Apply? [y/N]
 Answer y + Enter to apply, or press Enter to cancel; the prompt stays `support ❯`, and `ctx` shows the active provider connections
 ```
@@ -115,14 +117,14 @@ Press `Tab` after `k8s pod logs ` to list namespaces; after `k8s pod logs platfo
 
 ## WASM smoke test
 
-The sample plugin lives under `plugins/diagnostics` and exposes `diagnose cluster <name>` to the exact same registry. It calls the **Go built-in demo** `demo.cluster.health` through the Extism host function `host_call` (allowlisted to `demo.*`, and the Executor still rejects mutations). This is a deliberate contract test, independent of live Kubernetes credentials.
+The example plugin in `plugins/diagnostics` exposes `diagnose k8s <namespace>` and invokes explicitly granted Kubernetes read capabilities through the Extism host function `host_call`. The separate `plugins/fixture` module provides deterministic test coverage without live Kubernetes credentials.
 
 ```sh
 rustup target add wasm32-wasip1
 make plugin
 go get github.com/extism/go-sdk
 make run-plugin
-# In the shell: diagnose cluster prod-01
+# In the shell: diagnose k8s kube-system
 ```
 
 **Not end-to-end verified in this environment:** Rust/Cargo and Extism dependencies are unavailable here. Check the Extism SDK version and native runtime requirements on the build machine. A build failure means the integration is not yet proven; regular `make run` does not load WASM.
@@ -202,7 +204,7 @@ Run `plugins list` or `plugins info diagnostics` to inspect loaded WASM modules,
 
 Output defaults to a readable view (`plugins list` uses a table, `plugins info NAME` uses detail fields). Use `set format json` for JSON-formatted command results, and `set format table` to switch back. In JSON mode AI answers are wrapped as `{"answer":"..."}`. Command output is visually separated from the next prompt. See [docs/shell.md](docs/shell.md).
 
-Plugin manifests now support optional title, description, author, JSON input/output schemas and examples. CLI discovery (`plugins list`, `plugins info network`, `help network health`) and AI tools share these fields. Older `support.shell/v2alpha1` plugins remain supported; an MCP adapter has not yet been implemented. Details: [docs/plugins.md](docs/plugins.md).
+Plugin manifests now support optional title, description, author, JSON input/output schemas and examples. CLI discovery (`plugins list`, `plugins info network`, `help network health`) and AI tools share these fields. The current plugin API is `support.shell/v2alpha1`; MCP stdio is implemented (see [docs/mcp.md](docs/mcp.md)). Details: [docs/plugins.md](docs/plugins.md).
 
 ### Stdio MCP server
 
