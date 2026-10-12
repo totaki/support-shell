@@ -32,6 +32,9 @@ jobs:
           go tool cover -func=coverage.out | tee coverage.txt
       - name: Upload Go coverage to Coveralls
         if: success() && github.event_name != 'pull_request'
+        # Reporting is best-effort: an external Coveralls download outage must
+        # not skip go vet, builds, or the rest of this repository's CI checks.
+        continue-on-error: true
         uses: coverallsapp/github-action@v2
         with:
           file: coverage.out
