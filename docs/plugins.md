@@ -1,6 +1,6 @@
 # Extism / WASM plugins
 
-Support Shell loads a WASI plugin when built with `-tags extism` and `SUPPORT_PLUGIN` points to a WASM file. Its `describe()` response is validated as `pluginapi.Manifest` (`support.shell/v2alpha1`).
+Support Shell loads WASI plugins when built with `-tags extism`. By default it searches `PLUGIN_PATH=./plugins`; `SUPPORT_PLUGIN` is a legacy fallback. Its `describe()` response is validated as `pluginapi.Manifest` (`support.shell/v2alpha1`).
 
 The plugin exports `describe`, `execute` and `complete`. Command metadata is registered in the shared Registry. `execute` receives a command ID and JSON input.
 
@@ -38,7 +38,7 @@ make run-plugin
 # or: PLUGIN_PATH=/opt/support/plugins make run-plugin
 ```
 
-`make plugin` currently builds only the diagnostics example. To add another Rust plugin, place its source under `plugins/<name>`, export `describe/execute/complete`, and compile for `wasm32-wasip1`. Its release WASM is picked up on the next launch. The `extism` Go build tag is necessary.
+`make plugin` builds the diagnostics, network and E2E fixture WASM modules. To add another Rust plugin, place its source under `plugins/<name>`, export `describe/execute/complete`, and compile for `wasm32-wasip1`. Its release WASM is picked up on the next launch. The `extism` Go build tag is necessary.
 
 ## Plugin Manager
 
@@ -95,7 +95,7 @@ network health
 
 Optional, backwards-compatible manifest fields now include `title`, `description`, `author` on the plugin, and `inputSchema`, `outputSchema`, `examples` on each command. Existing manifests with `apiVersion: support.shell/v2alpha1` remain accepted; the wire API version has **not** changed. Rust SDK exposes the corresponding optional metadata on `Manifest` and `Command`.
 
-The same metadata feeds `plugins list` (short purpose), `plugins info NAME` (detail), `help <command path>` (arguments, examples and schemas), and the built-in AI tool definitions. Prefer JSON Schema object definitions with `properties` and `required`; use `additionalProperties: false` for tight tool interfaces. The Go Host currently validates basic schema shape in the manifest, not full input/output values at execution time. MCP exposure is a **planned adapter**, not implemented by this change.
+The same metadata feeds `plugins list` (short purpose), `plugins info NAME` (detail), `help <command path>` (arguments, examples and schemas), and the built-in AI tool definitions. Prefer JSON Schema object definitions with `properties` and `required`; use `additionalProperties: false` for tight tool interfaces. The Go Host currently validates basic schema shape in the manifest, not full input/output values at execution time. MCP stdio exposure is **implemented**; see the next section and [docs/mcp.md](mcp.md).
 
 Try `plugins list`, `plugins info network`, `help network health`, or `help diagnose k8s` after rebuilding the Rust plugins. Per-plugin README files remain the place for extended how-to and safety notes.
 
