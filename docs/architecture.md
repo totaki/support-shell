@@ -1,21 +1,30 @@
 # Architecture
 
-Support Shell is a provider-first infrastructure support console written in Go.
+Support Shell is a Go-based **research PoC**, not a validated operator support product. See [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) for the original hypotheses, current findings and handoff.
 
 ```text
-                    Operator
-                   CLI / MCP / AI
-                         |
-                    Core Registry
-                input / policy / approval
-                         |
-        +----------------+---------------+
-        |                                |
- Provider Registry                 WASM Plugin Manager
-        |                                |
-  Kubernetes Provider <---- granted read-only capabilities
-        |
-     kubectl API
+          Operator / external MCP client
+                      |
+       +--------------+--------------+
+       |              |              |
+    CLI/REPL      Built-in AI      MCP stdio
+       |              |              |
+       +--------------+--------------+
+                      |
+                 Core Registry
+          input validation / policies
+                      |
+       +--------------+----------------+
+       |                               |
+  Provider Registry             WASM Plugin Host
+       |                        Extism / WASI
+       |                               |
+       +<---- granted read-only -------+
+       |
+ +-----+-------------------+
+ |                         |
+ Kubernetes Provider    OpenStack Provider
+  kubectl --context      openstack --os-cloud
 ```
 
 ## Components
@@ -23,7 +32,8 @@ Support Shell is a provider-first infrastructure support console written in Go.
 - `cmd/support` wires built-in providers, Core, optional WASM plugins and interfaces.
 - `internal/core` implements command dispatch, input validation, interface policies and the initial approval token mechanism.
 - `internal/provider` implements the infrastructure provider contract, registry, operation discovery and a read-only execution boundary for extensions.
-- `internal/providers/kubernetes` implements provider-specific Kubernetes operations and local kubeconfig connectivity.
+- `internal/providers/kubernetes` implements provider-specific Kubernetes operations and session-local kubeconfig context selection.
+- `internal/providers/openstack` implements read-only OpenStack operations and named `clouds.yaml` connections.
 - `internal/shell` implements REPL, history, completion, terminal rendering and operator interaction.
 - `internal/agent` provides model tool calling, execution budget and context handling.
 - `internal/mcp` exposes policy-filtered read-only operations via stdio JSON-RPC.
@@ -44,8 +54,8 @@ Core commands. CLI, MCP and AI expose tools via Core and follow its surface poli
 The plugin API version changed to `support.shell/v2alpha1`. This is intentionally breaking;
 rebuild old WASM artifacts. There is no compatibility alias for old `k8s.*` operation IDs.
 
-Operator approval is not fully integrated with generic CLI/Agent workflows yet. The Kubernetes
-connection selection is now session-local and does not edit kubeconfig. MCP currently binds
+Operator approval is not fully integrated with generic CLI/Agent workflows yet. Kubernetes
+and OpenStack connection selections are session-local; selection does not mutate global kubeconfig or clouds.yaml. MCP currently binds
 one connection per server process; connection-specific credentials and remote connection
 stores are future work.
 Neither part should be treated as a completed production security boundary.
