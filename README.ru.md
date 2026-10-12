@@ -1,5 +1,7 @@
 # Support Shell
 
+> **Новый агент:** сначала прочитай [контекст проекта](docs/PROJECT_CONTEXT.md) и [AGENTS.md](AGENTS.md). Это исследовательский PoC, не подтверждённый продукт поддержки. Для статуса текущей реализации ориентируйся на контекст и код, а не на исторические заметки ниже.
+
 [![CI](https://github.com/totaki/support-shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/totaki/support-shell/actions/workflows/ci.yml)
 **Базовая версия MVP:** [v0.1.0 — изменения](CHANGELOG.md) · [порядок релиза](docs/releases.md). Git-тег и GitHub Release публикуются отдельно.
 
@@ -12,7 +14,7 @@
 
 **OpenStack:** нужен установленный `python-openstackclient` и `clouds.yaml` (либо переменные `OS_*`). Провайдер умеет `connections use openstack/<имя>`, `openstack servers`, `openstack networks`, `openstack volumes` и другие read-only запросы. `OS_CLOUD` или `SUPPORT_OPENSTACK_CONNECTION` задают начальное подключение. Подробнее: [провайдеры](docs/providers.md).
 
-**Архитектура:** [провайдеры и capabilities](docs/providers.md). Kubernetes — первый встроенный провайдер; OpenStack, PostgreSQL и Kafka планируются отдельными драйверами. Нативные операции имеют ID `provider.kubernetes.*`, а короткие команды CLI (`k8s pods` и т. д.) остаются интерфейсом пользователя.
+**Архитектура:** [провайдеры и capabilities](docs/providers.md). Kubernetes и OpenStack — встроенные провайдеры; PostgreSQL и Kafka не реализованы и не входят в согласованный план. Нативные операции имеют ID `provider.kubernetes.*`, а короткие команды CLI (`k8s pods` и т. д.) остаются интерфейсом пользователя.
 
 ## Локальная конфигурация через .env
 
@@ -92,7 +94,7 @@ make run-plugin
 - [Плагины](docs/plugins.md) — Extism, контракт и пример.
 - [Английский README](README.md).
 
-Ограничения: нет MCP-сервера, полноценного управления permissions и безопасного approval для изменений; `kubectl` выполняется локально доверенным Go-модулем; агента нельзя считать детерминированным диагностическим workflow.
+Ограничения: MCP-сервер stdio реализован, но нет полноценной многопользовательской модели permissions и безопасного approval для изменений; `kubectl` выполняется локально доверенным Go-модулем; агента нельзя считать детерминированным диагностическим workflow.
 
 
 ### Расширения и зависимости
@@ -127,7 +129,7 @@ make run-plugin
 
 ### Единая документация инструментов
 
-Плагины могут описывать себя в `describe()`: `title`, `description`, `author`, схемы `inputSchema` / `outputSchema` и примеры `examples`. Теперь это видно через `plugins list`, `plugins info network` и `help network health`; встроенный агент получает схему и примеры из того же Registry. Старые плагины совместимы. MCP-адаптер поверх Registry — следующий этап, пока он не реализован.
+Плагины могут описывать себя в `describe()`: `title`, `description`, `author`, схемы `inputSchema` / `outputSchema` и примеры `examples`. Теперь это видно через `plugins list`, `plugins info network` и `help network health`; встроенный агент получает схему и примеры из того же Registry. Текущий API плагинов — `support.shell/v2alpha1` (совместимость со старым `v1alpha1` не поддерживается). MCP stdio уже реализован, см. [docs/mcp.md](docs/mcp.md).
 
 ### MCP Server (stdio)
 
